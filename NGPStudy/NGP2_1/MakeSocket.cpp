@@ -6,6 +6,7 @@
 
 #pragma comment(lib, "ws2_32") // ws2_32.lib 링크
 
+#define INITIALIZEWORD(mainVer, subVer) (WORD)(((BYTE)mainVer << (BYTE)8) + (BYTE)subVer)
 
 void err_quit(const char* msg)
 {
@@ -21,13 +22,15 @@ void err_quit(const char* msg)
 }
 
 
+
+
 int main(int argc, char* argv[])
 {
 	// 윈속 초기화
 	WSADATA wsa;
-	WORD word = MAKEWORD(1, 1);
+	MAKEWORD(1, 2);
 
-	if (WSAStartup(word, &wsa) != 0)
+	if (WSAStartup(INITIALIZEWORD(2, 2), &wsa) != 0)
 		return 1;
 	printf("[알림] 윈속 초기화 성공\n");
 	printf("%#x, %#x, %s, %s\n", wsa.wVersion, wsa.wHighVersion, wsa.szDescription, wsa.szSystemStatus);
