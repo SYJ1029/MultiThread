@@ -2,7 +2,7 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
-
+#include <algorithm>
 
 const int MAX_THREADS = 16;
 
@@ -171,6 +171,10 @@ int main()
 
 
 
+	}
+
+	{
+		
 	}
 
 	//worker();
