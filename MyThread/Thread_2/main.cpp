@@ -5,7 +5,7 @@
 
 
 std::atomic<bool> g_ready = false;
-int g_data = 0;
+volatile int g_data = 0;
 
 void Sender()
 {
@@ -18,7 +18,7 @@ void Receiver()
 	bool expected = false;
 	bool desired = true;
 
-	while (g_ready.compare_exchange_strong(expected, desired) == false)
+	while (g_ready.compare_exchange_weak(expected, desired) == false)
 	{
 
 	}
