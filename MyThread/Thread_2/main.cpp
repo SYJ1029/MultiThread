@@ -4,7 +4,7 @@
 
 const int LOOP_COUNT = 5'000'0000;
 volatile int x, y;
-int trace_x[LOOP_COUNT], trace_y[LOOP_COUNT];
+std::atomic<int> trace_x[LOOP_COUNT], trace_y[LOOP_COUNT];
 
 void thread_x()
 {
