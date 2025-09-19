@@ -1,36 +1,45 @@
 #include <iostream>
 #include <thread>
-#include <mutex>
-#include <atomic>
 
 
-std::atomic<bool> g_ready = false;
-volatile int g_data = 0;
+const int LOOP_COUNT = 5'000'0000;
+volatile int x, y;
+int trace_x[LOOP_COUNT], trace_y[LOOP_COUNT];
 
-void Sender()
+void thread_x()
 {
-	std::cin >> g_data;
-	g_ready = true;
+	for(int i = 0; i < LOOP_COUNT; ++i) {
+		x = i;
+		trace_x[i] = y;
+	}
 }
 
-void Receiver()
+void thread_y()
 {
-	bool expected = false;
-	bool desired = true;
-
-	while (g_ready.compare_exchange_weak(expected, desired) == false)
-	{
-
+	for(int i = 0; i < LOOP_COUNT; ++i) {
+		y = i;
+		trace_y[i] = x;
 	}
-	std::cout << "Data: " << g_data << std::endl;
 }
 
 int main()
 {
-	std::thread t2{ Receiver };
-	std::thread t1{ Sender };
+	std::thread t0(thread_x);
+	std::thread t1(thread_y);
+
+	// Thread 2°³ ½ÇÇà
+	int count = 0;
+	for (int i = 0; i < LOOP_COUNT; ++i)
+		if(trace_x[i] == trace_x[i + 1])
+			if (trace_y[trace_x[i]] == trace_y[trace_x[i] + 1]) {
+				if (trace_y[trace_x[i]] != i) continue;
+				else ++count;
+			}
+	std::cout << "Total Memory Inconsistency: " << count << std::endl;
 
 
+
+	t0.join();
 	t1.join();
-	t2.join();
 }
+
