@@ -8,7 +8,7 @@
 
 using namespace std::chrono;
 
-const int MAX_THREADS = 32;
+const int MAX_THREADS = 8;
 
 
 
@@ -61,49 +61,68 @@ std::mutex m;
 std::atomic<int> atomSum{ 0 };
 Bakery bake;
 
-void Add_Lock(int loopCount)
+void Add_Default(int loopCount)
 {
-	int localSum{ 0 };
-
+	volatile int localSum{ 0 };
 	for (int i = 0; i < loopCount; ++i)
 	{
-		localSum++;
+		//localSum++;
+		sum++;
 	}
-
-	m.lock();
-	sum += localSum;
-	m.unlock();
+	//sum += localSum;
 }
 
-void Add_Bakery(int loopCount, int threadID)
+void Add_Lock(int loopCount)
 {
-
-
 	volatile int localSum{ 0 };
 
 	for (int i = 0; i < loopCount; ++i)
 	{
-		localSum++;
+		//localSum++;
+		m.lock();
+		sum++;
+		m.unlock();
 	}
 
-	bake.lock(threadID);
-	sum += localSum;
-	bake.unlock(threadID);
+	//m.lock();
+	//sum += localSum;
+	//m.unlock();
+}
+
+void Add_Bakery(int loopCount, int threadID)
+{
+	volatile int localSum{ 0 };
+
+	for (int i = 0; i < loopCount; ++i)
+	{
+		bake.lock(threadID);
+		sum++;
+		bake.unlock(threadID);
+
+		//localSum++;
+	}
+
+	//bake.lock(threadID);
+	//sum += localSum;
+	//bake.unlock(threadID);
 
 }
 
 void Add_atomic(int loopCount, int threadID)
 {
-	int localSum{ 0 };
+	volatile int localSum{ 0 };
 
 	for (int i = 0; i < loopCount; ++i)
 	{
-		localSum++;
+		//localSum++;
+		bake.lock(threadID);
+		atomSum++;
+		bake.unlock(threadID);
 	}
 
-	bake.lock(threadID);
-	atomSum += localSum;
-	bake.unlock(threadID);
+	//bake.lock(threadID);
+	//atomSum += localSum;
+	//bake.unlock(threadID);
 }
 
 
@@ -113,12 +132,30 @@ int main()
 {
 	{
 		// volatile만 사용
-
+		std::cout << "<volatile만 사용>" << std::endl << std::endl;
+		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+		{
+			sum = 0;
+			std::thread* threads = new std::thread[num_threads];
+			auto timerStart = std::chrono::high_resolution_clock::now();
+			for (int i = 0; i < num_threads; ++i)
+				threads[i] = std::thread(Add_Default, 1'000'0000 / num_threads);
+			for (int i = 0; i < num_threads; ++i)
+				threads[i].join();
+			delete[] threads;
+			auto timerEnd = std::chrono::high_resolution_clock::now();
+			auto time_span = duration_cast<milliseconds>(timerEnd - timerStart).count();
+			std::cout << "Sum = " << sum << std::endl;
+			std::cout << num_threads << "개의 쓰레드 실행 시간 : " << time_span << "ms" << std::endl;
+		}
 	}
+
+	std::cout << std::endl;
 
 	{
 		// mutex 사용
-		std::cout << "Mutex 사용" << std::endl;
+		std::cout << "<Mutex 사용>" << std::endl << std::endl;
+		
 		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
 		{
 			sum = 0;
@@ -141,11 +178,12 @@ int main()
 		}
 	}
 
+	std::cout << std::endl;
 
 
 	{
 		// Bakery 알고리즘 사용 - volatile
-		std::cout << "Bakery 알고리즘 사용 - volatile" << std::endl;
+		std::cout << "<Bakery 알고리즘 사용 - volatile>" << std::endl << std::endl;
 		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
 		{
 			sum = 0;
@@ -176,9 +214,12 @@ int main()
 
 	}
 
+	std::cout << std::endl;
+
+
 	{
 		//Bakery 알고리즘 사용 - atomic
-		std::cout << "Bakery 알고리즘 사용 - atomic" << std::endl;
+		std::cout << "<Bakery 알고리즘 사용 - atomic>" << std::endl << std::endl;
 		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
 		{
 			atomSum = 0;
