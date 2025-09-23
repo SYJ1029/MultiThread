@@ -1,10 +1,59 @@
+#include <iostream>
 #include <thread>
 #include <mutex>
 #include <atomic>
 #include <algorithm>
 #include <vector>
+#include <chrono>
 
-int threadID = 1;
+using namespace std::chrono;
+
+const int MAX_THREADS = 32;
+
+
+
+
+volatile class Bakery {
+	bool* flag;
+	std::vector<size_t> label;
+
+public:
+	Bakery() {}
+	void make(const int n) {
+		flag = new bool[n];
+		label.reserve(n);
+		for (int i = 0; i < n; i++) {
+			flag[i] = false;
+			label.emplace_back(0);
+		}
+
+	}
+
+	void destroy() {
+		delete[] flag;
+		flag = nullptr;
+		label.clear();
+	}
+
+	void lock(int id) {
+		//auto i = std::this_thread::get_id();
+
+		flag[id] = true;
+		label[id] = *std::max_element(label.begin(), label.end()) + 1;
+
+		auto k = std::distance(label.begin(), (std::min_element(label.begin(), label.end())));
+
+		while (flag[k] && label[k] < label[id] || (label[k] == label[id] && k < id))
+		{
+		}
+
+	}
+	void unlock(int id) {
+		flag[id] = false;
+	}
+
+};
+
 
 volatile int sum{ 0 };
 
@@ -26,22 +75,24 @@ void Add_Lock(int loopCount)
 	m.unlock();
 }
 
-void Add_Bakery(int loopCount)
+void Add_Bakery(int loopCount, int threadID)
 {
 
-	int id = threadID++;
 
-	int localSum{ 0 };
+	volatile int localSum{ 0 };
 
 	for (int i = 0; i < loopCount; ++i)
 	{
 		localSum++;
 	}
 
+	bake.lock(threadID);
+	sum += localSum;
+	bake.unlock(threadID);
 
 }
 
-void Add_atomic(int loopCount)
+void Add_atomic(int loopCount, int threadID)
 {
 	int localSum{ 0 };
 
@@ -50,56 +101,11 @@ void Add_atomic(int loopCount)
 		localSum++;
 	}
 
+	bake.lock(threadID);
 	atomSum += localSum;
+	bake.unlock(threadID);
 }
 
-
-struct Lock
-{
-	void lock() {}
-	void unlock() {}
-};
-
-
-
-
-class Bakery {
-	bool* flag;
-	std::vector<size_t> label;
-
-public:
-	Bakery() {}
-	void make(int n) {
-		flag = new bool[n];
-		label.reserve(n);
-		for (int i = 0; i < n; i++) {
-			flag[i] = false;
-			label.emplace_back(0);
-		}
-
-	}
-	void lock(int id) {
-		auto i = std::this_thread::get_id();
-
-		flag[id] = true;
-
-		label[id] = *std::max_element(label.begin(), label.end()) + 1;
-		auto k = std::distance(label.begin(), (std::min_element(label.begin(), label.end())));
-		while (true)
-		{
-			if (id != k && flag[k] && label[k] < label[id] && k < id)
-				break;
-		}
-
-		while (k != id && flag[k] && label[k] < label[id] && k < id) {}
-
-	}
-	void unlock(int id) {
-		flag[id] = false;
-
-	}
-
-};
 
 
 
@@ -107,19 +113,96 @@ int main()
 {
 	{
 		// volatile만 사용
+
 	}
 
 	{
 		// mutex 사용
+		std::cout << "Mutex 사용" << std::endl;
+		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+		{
+			sum = 0;
+			std::thread* threads = new std::thread[num_threads];
+
+			auto timerStart = std::chrono::high_resolution_clock::now();
+
+			for (int i = 0; i < num_threads; ++i)
+				threads[i] = std::thread(Add_Lock, 1'000'0000 / num_threads);
+			for (int i = 0; i < num_threads; ++i)
+				threads[i].join();
+
+			delete[] threads;
+
+			auto timerEnd = std::chrono::high_resolution_clock::now();
+			auto time_span = duration_cast<milliseconds>(timerEnd - timerStart).count();
+
+			std::cout << "Sum = " << sum << std::endl;
+			std::cout << num_threads << "개의 쓰레드 실행 시간 : " << time_span << "ms" << std::endl;
+		}
+	}
+
+
+
+	{
+		// Bakery 알고리즘 사용 - volatile
+		std::cout << "Bakery 알고리즘 사용 - volatile" << std::endl;
+		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+		{
+			sum = 0;
+			bake.make(num_threads);
+
+			std::thread* threads = new std::thread[num_threads];
+			int* threadIDs = new int[num_threads];
+
+
+			auto timerStart = std::chrono::high_resolution_clock::now();
+
+			for (int i = 0; i < num_threads; ++i)
+				threads[i] = std::thread(Add_Bakery, 1'000'0000 / num_threads, i);
+			for (int i = 0; i < num_threads; ++i)
+				threads[i].join();
+
+			bake.destroy();
+
+			delete[] threads;
+			delete[] threadIDs;
+
+			auto timerEnd = std::chrono::high_resolution_clock::now();
+			auto time_span = duration_cast<milliseconds>(timerEnd - timerStart).count();
+
+			std::cout << "Sum = " << sum << std::endl;
+			std::cout << num_threads << "개의 쓰레드 실행 시간 : " << time_span << "ms" << std::endl;
+		}
+
 	}
 
 	{
-		// atomic 사용
-	}
+		//Bakery 알고리즘 사용 - atomic
+		std::cout << "Bakery 알고리즘 사용 - atomic" << std::endl;
+		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+		{
+			atomSum = 0;
+			bake.make(num_threads);
 
-	{
-		// Bakery 알고리즘 사용
+			std::thread* threads = new std::thread[num_threads];
+			int* threadIDs = new int[num_threads];
 
+			auto timerStart = std::chrono::high_resolution_clock::now();
 
+			for (int i = 0; i < num_threads; ++i)
+				threads[i] = std::thread(Add_atomic, 1'000'0000 / num_threads, i);
+			for (int i = 0; i < num_threads; ++i)
+				threads[i].join();
+			bake.destroy();
+
+			delete[] threads;
+			delete[] threadIDs;
+
+			auto timerEnd = std::chrono::high_resolution_clock::now();
+			auto time_span = duration_cast<milliseconds>(timerEnd - timerStart).count();
+
+			std::cout << "atomSum = " << atomSum << std::endl;
+			std::cout << num_threads << "개의 쓰레드 실행 시간 : " << time_span << "ms" << std::endl;
+		}
 	}
 }
