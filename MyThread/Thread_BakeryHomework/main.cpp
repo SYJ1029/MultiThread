@@ -19,6 +19,8 @@ volatile class Bakery {
 
 public:
 	Bakery() {}
+
+
 	void make(const int n) {
 		flag = new bool[n];
 		label.reserve(n);
@@ -35,16 +37,19 @@ public:
 		label.clear();
 	}
 
-	void lock(int id) {
+	void lock(volatile int id) {
 		//auto i = std::this_thread::get_id();
+
 
 		flag[id] = true;
 		label[id] = *std::max_element(label.begin(), label.end()) + 1;
 
 		auto k = std::distance(label.begin(), (std::min_element(label.begin(), label.end())));
 
-		while (flag[k] && label[k] < label[id] || (label[k] == label[id] && k < id))
+		while (k != id && flag[k] && label[k] < label[id] || (label[k] == label[id] && k < id))
 		{
+			printf("대기 중\n");
+			std::cout << "k: " << k << std::endl << "이 쓰레드의 id: " << id << std::endl;
 		}
 
 	}
