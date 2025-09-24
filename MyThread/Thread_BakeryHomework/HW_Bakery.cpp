@@ -66,7 +66,7 @@ volatile int sum{ 0 };
 std::atomic<int> atomSum{ 0 };
 std::mutex m;
 
-Bakery<bool, int> bake1;
+Bakery<volatile bool, volatile int> bake1;
 Bakery<std::atomic<bool>, std::atomic<int>> bake2;
 
 void Add_Default(int loopCount)
