@@ -48,7 +48,7 @@ public:
 		flag[id] = true;
 		label[id] = *std::max_element(label.begin(), label.end()) + 1;
 
-		auto k = std::distance(label.begin(), (std::min_element(label.begin(), label.end())));
+		//auto k = std::distance(label.begin(), (std::min_element(label.begin(), label.end())));
 
 		while (k != id && flag[k] && (label[k] < label[id] || (label[k] == label[id] && k < id)))
 		{
