@@ -10,23 +10,23 @@ using namespace std::chrono;
 
 const int MAX_THREADS = 8;
 
+int num_threads = 1;
 
 
-
-volatile class Bakery {
+class Bakery_volatile {
 	volatile bool* flag;
-	std::vector<int> label;
+	volatile int* label;
 
 public:
-	Bakery() {
-		label.reserve(MAX_THREADS);
+	Bakery_volatile() {
+		label = nullptr;
 		flag = nullptr;
 	}
 
 
-	void make(volatile int n) {
+	void make(int n) {
 		flag = new bool[n];
-		label.resize(n);
+		label = new int[n];
 		for (int i = 0; i < n; i++) {
 			flag[i] = false;
 			label[i] = 0;
@@ -36,34 +36,96 @@ public:
 
 	void destroy() {
 		delete[] flag;
+		delete[] label;
+
 		flag = nullptr;
-		label.clear();
-		//std::cout << "destroy 후 label size: " << label.size() << std::endl;
+		label = nullptr;
+	}
+
+	int MaxLabel() {
+		int max = label[0];
+
+		for (int i = 0; i < num_threads; i++) {
+			if (label[i] > max) {
+				max = label[i];
+			}
+		}
+		return max;
 	}
 
 	void lock(volatile int id) {
-		//auto i = std::this_thread::get_id();
 
 
 		flag[id] = true;
-		label[id] = *std::max_element(label.begin(), label.end()) + 1;
+		label[id] = MaxLabel() + 1;
 
-		//auto k = std::distance(label.begin(), (std::min_element(label.begin(), label.end())));
-
-		while (k != id && flag[k] && (label[k] < label[id] || (label[k] == label[id] && k < id)))
+		
+		for(int i = 0; i < num_threads; ++i)
 		{
-			//std::cout << "size: " << label.size() << std::endl;
-			//std::cout << "flag[k]: " << flag[k] << std::endl;
-			//std::cout << label[id] << std::endl;
-			//std::cout << label[k] << std::endl;
-			//std::cout << "k: " << k << std::endl << "이 쓰레드의 id: " << id << std::endl;
+			if (i == id) continue;
+			while (flag[i] && (label[i] < label[id] || (label[i] == label[id] && i < id)))
+			{
+
+			}
 		}
+
 
 	}
 	void unlock(int id) {
 		flag[id] = false;
+		label[id] = 0;
 	}
 
+};
+
+class Bakery_atomic {
+	std::atomic<bool>* flag;
+	std::atomic<int>* label;
+public:
+	Bakery_atomic() {
+		label = nullptr;
+		flag = nullptr;
+	}
+	void make(int n) {
+		flag = new std::atomic<bool>[n];
+		label = new std::atomic<int>[n];
+		for (int i = 0; i < n; i++) {
+			flag[i] = false;
+			label[i] = 0;
+		}
+	}
+	void destroy() {
+		delete[] flag;
+		delete[] label;
+		flag = nullptr;
+		label = nullptr;
+	}
+	int MaxLabel() {
+		int max = label[0];
+		for (int i = 1; i < num_threads; i++) {
+			if (label[i] > max) {
+				max = label[i];
+			}
+		}
+		return max;
+	}
+
+	void lock(int id) {
+		flag[id] = true;
+		label[id] = MaxLabel() + 1;
+		for (int i = 0; i < num_threads; ++i)
+		{
+			if (i == id) continue;
+			while (flag[i] && (label[i] < label[id] || (label[i] == label[id] && i < id)))
+			{
+				//std::cout << num_threads << std::endl;
+			}
+		}
+	}
+
+	void unlock(int id) {
+		flag[id] = false;
+	}
 };
 
 
@@ -71,7 +133,8 @@ volatile int sum{ 0 };
 
 std::mutex m;
 std::atomic<int> atomSum{ 0 };
-Bakery bake;
+Bakery_volatile bake1;
+Bakery_atomic bake2;
 
 void Add_Default(int loopCount)
 {
@@ -107,9 +170,9 @@ void Add_Bakery(int loopCount, int threadID)
 
 	for (int i = 0; i < loopCount; ++i)
 	{
-		bake.lock(threadID);
+		bake1.lock(threadID);
 		sum++;
-		bake.unlock(threadID);
+		bake1.unlock(threadID);
 
 		//localSum++;
 	}
@@ -127,9 +190,9 @@ void Add_atomic(int loopCount, int threadID)
 	for (int i = 0; i < loopCount; ++i)
 	{
 		//localSum++;
-		bake.lock(threadID);
+		bake2.lock(threadID);
 		atomSum++;
-		bake.unlock(threadID);
+		bake2.unlock(threadID);
 	}
 
 	//bake.lock(threadID);
@@ -145,7 +208,7 @@ int main()
 	{
 		// volatile만 사용
 		std::cout << "<volatile만 사용>" << std::endl << std::endl;
-		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+		for (num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
 		{
 			sum = 0;
 			std::thread* threads = new std::thread[num_threads];
@@ -168,7 +231,7 @@ int main()
 		// mutex 사용
 		std::cout << "<Mutex 사용>" << std::endl << std::endl;
 		
-		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+		for (num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
 		{
 			sum = 0;
 			std::thread* threads = new std::thread[num_threads];
@@ -196,10 +259,10 @@ int main()
 	{
 		// Bakery 알고리즘 사용 - volatile
 		std::cout << "<Bakery 알고리즘 사용 - volatile>" << std::endl << std::endl;
-		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+		for (num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
 		{
 			sum = 0;
-			bake.make(num_threads);
+			bake1.make(num_threads);
 
 			std::thread* threads = new std::thread[num_threads];
 			int* threadIDs = new int[num_threads];
@@ -212,7 +275,7 @@ int main()
 			for (int i = 0; i < num_threads; ++i)
 				threads[i].join();
 
-			bake.destroy();
+			bake1.destroy();
 
 			delete[] threads;
 			delete[] threadIDs;
@@ -232,10 +295,10 @@ int main()
 	{
 		//Bakery 알고리즘 사용 - atomic
 		std::cout << "<Bakery 알고리즘 사용 - atomic>" << std::endl << std::endl;
-		for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+		for (num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
 		{
 			atomSum = 0;
-			bake.make(num_threads);
+			bake2.make(num_threads);
 
 			std::thread* threads = new std::thread[num_threads];
 			int* threadIDs = new int[num_threads];
@@ -246,7 +309,7 @@ int main()
 				threads[i] = std::thread(Add_atomic, 1'000'0000 / num_threads, i);
 			for (int i = 0; i < num_threads; ++i)
 				threads[i].join();
-			bake.destroy();
+			bake2.destroy();
 
 			delete[] threads;
 			delete[] threadIDs;
