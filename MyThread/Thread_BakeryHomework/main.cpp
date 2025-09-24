@@ -14,11 +14,14 @@ const int MAX_THREADS = 8;
 
 
 volatile class Bakery {
-	bool* flag;
+	volatile bool* flag;
 	std::vector<int> label;
 
 public:
-	Bakery() {}
+	Bakery() {
+		label.reserve(MAX_THREADS);
+		flag = nullptr;
+	}
 
 
 	void make(volatile int n) {
@@ -26,7 +29,7 @@ public:
 		label.resize(n);
 		for (int i = 0; i < n; i++) {
 			flag[i] = false;
-			label.emplace_back(0);
+			label[i] = 0;
 		}
 
 	}
@@ -35,6 +38,7 @@ public:
 		delete[] flag;
 		flag = nullptr;
 		label.clear();
+		//std::cout << "destroy 후 label size: " << label.size() << std::endl;
 	}
 
 	void lock(volatile int id) {
@@ -46,12 +50,13 @@ public:
 
 		auto k = std::distance(label.begin(), (std::min_element(label.begin(), label.end())));
 
-		while (k != id && flag[k] && label[k] < label[id] || (label[k] == label[id] && k < id))
+		while (k != id && flag[k] && (label[k] < label[id] || (label[k] == label[id] && k < id)))
 		{
-			printf("대기 중\n");
-			std::cout << label[id] << std::endl;
-			std::cout << label[k] << std::endl;
-			std::cout << "k: " << k << std::endl << "이 쓰레드의 id: " << id << std::endl;
+			//std::cout << "size: " << label.size() << std::endl;
+			//std::cout << "flag[k]: " << flag[k] << std::endl;
+			//std::cout << label[id] << std::endl;
+			//std::cout << label[k] << std::endl;
+			//std::cout << "k: " << k << std::endl << "이 쓰레드의 id: " << id << std::endl;
 		}
 
 	}
