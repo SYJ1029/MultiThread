@@ -15,15 +15,15 @@ const int MAX_THREADS = 8;
 
 volatile class Bakery {
 	bool* flag;
-	std::vector<size_t> label;
+	std::vector<int> label;
 
 public:
 	Bakery() {}
 
 
-	void make(const int n) {
+	void make(volatile int n) {
 		flag = new bool[n];
-		label.reserve(n);
+		label.resize(n);
 		for (int i = 0; i < n; i++) {
 			flag[i] = false;
 			label.emplace_back(0);
@@ -49,6 +49,8 @@ public:
 		while (k != id && flag[k] && label[k] < label[id] || (label[k] == label[id] && k < id))
 		{
 			printf("대기 중\n");
+			std::cout << label[id] << std::endl;
+			std::cout << label[k] << std::endl;
 			std::cout << "k: " << k << std::endl << "이 쓰레드의 id: " << id << std::endl;
 		}
 
