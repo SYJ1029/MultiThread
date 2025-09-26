@@ -1,7 +1,4 @@
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <mutex>
+#include "pch.h"
 
 const int MAX_THREADS = 16;
 
@@ -11,7 +8,6 @@ volatile int sum;
 //cas_lock = 1 => 누군가 락을 가지고 있음
 std::atomic_int cas_lock{ 0 };
 
-std::mutex m;
 
 bool CAS(std::atomic_int *l, int expected, int desired) {
 	return std::atomic_compare_exchange_strong(l, &expected, desired);
@@ -19,10 +15,12 @@ bool CAS(std::atomic_int *l, int expected, int desired) {
 
 void CAS_LOCK()
 {
-	
+	/* while (1 == LOCK); LOCK = 1; */
+	while (!CAS(&cas_lock, 0, 1));
 }
 void CAS_UNLOCK()
 {
+	cas_lock = 0;
 }
 
 
@@ -56,6 +54,7 @@ void NoLockWorker()
 
 int main()
 {
+
 	using namespace std::chrono;
 
 	{

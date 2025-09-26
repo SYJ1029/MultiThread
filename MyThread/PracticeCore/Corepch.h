@@ -8,6 +8,15 @@
 #define PCH_H
 
 // 여기에 미리 컴파일하려는 헤더 추가
+#include <iostream>
+#include <thread>
+#include <atomic>
+#include <chrono>
 #include "framework.h"
 
+using namespace std::chrono;
+
+void fnPracticeCore();
+
 #endif //PCH_H
+
