@@ -58,12 +58,12 @@ public:
 		Node* pred = head;
 		pred->lock();
 		Node* curr = pred->next;
-		curr->lock();
+		//curr->lock();
 
 		// pred->value < x <= curr->value
 		while (curr->value < x) {
 			//Node* next = curr->next;
-			curr->next->lock();         // 1) 다음을 먼저 잠그고
+			curr->lock();         // 1) 다음을 먼저 잠그고
 			pred->unlock();       // 2) 이전을 푼다
 			pred = curr;          // 3) 전진
 			curr = curr->next;
@@ -88,10 +88,10 @@ public:
 		Node* pred = head;
 		pred->lock();
 		Node* curr = pred->next;
-		curr->lock();
+		//curr->lock();
 
 		while (curr->value < x) {
-			curr->next->lock();
+			curr->lock();
 			pred->unlock();
 			pred = curr;
 			curr = curr->next;
@@ -115,11 +115,11 @@ public:
 		Node* pred = head;
 		pred->lock();
 		Node* curr = pred->next;
-		curr->lock();
+		//curr->lock();
 
 		while (curr->value < x) {
 			pred->unlock();
-			curr->next->lock();
+			curr->lock();
 			pred = curr;
 			curr = curr->next;
 		}
