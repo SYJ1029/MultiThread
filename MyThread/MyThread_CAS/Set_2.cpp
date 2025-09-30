@@ -62,11 +62,11 @@ public:
 
 		// pred->value < x <= curr->value
 		while (curr->value < x) {
-			Node* next = curr->next;
-			next->lock();         // 1) 다음을 먼저 잠그고
+			//Node* next = curr->next;
+			curr->next->lock();         // 1) 다음을 먼저 잠그고
 			pred->unlock();       // 2) 이전을 푼다
 			pred = curr;          // 3) 전진
-			curr = next;
+			curr = curr->next;
 		}
 
 		if (curr->value == x) {
@@ -91,11 +91,10 @@ public:
 		curr->lock();
 
 		while (curr->value < x) {
-			Node* next = curr->next;
-			next->lock();
+			curr->next->lock();
 			pred->unlock();
 			pred = curr;
-			curr = next;
+			curr = curr->next;
 		}
 
 		if (curr->value != x) {
@@ -120,10 +119,9 @@ public:
 
 		while (curr->value < x) {
 			pred->unlock();
-			Node* next = curr->next;
-			next->lock();
+			curr->next->lock();
 			pred = curr;
-			curr = next;
+			curr = curr->next;
 		}
 
 		bool found = (curr->value == x);
