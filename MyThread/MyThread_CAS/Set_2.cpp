@@ -12,6 +12,12 @@ public:
 	int value;
 	Node* next;
 	Node(int val) : value(val), next(nullptr) {}
+
+	void lock() { nodeLock.lock(); }
+	void unlock() { nodeLock.unlock(); }
+
+private:
+	std::mutex nodeLock;
 };
 
 
@@ -48,81 +54,83 @@ public:
 		head->next = tail;
 	}
 
-	bool add(int x)
-	{
-		set_lock.lock();
-		auto n = new Node(x);
-
+	bool add(int x) {
 		Node* pred = head;
-		Node* curr = head->next;
+		pred->lock();
+		Node* curr = pred->next;
+		curr->lock();
 
-		// pred < x <= curr
+		// pred->value < x <= curr->value
 		while (curr->value < x) {
-			pred = curr;
-			curr = curr->next;
+			Node* next = curr->next;
+			next->lock();         // 1) 다음을 먼저 잠그고
+			pred->unlock();       // 2) 이전을 푼다
+			pred = curr;          // 3) 전진
+			curr = next;
 		}
 
-
-		if (curr->value == x)
-		{
-			delete n;
-			set_lock.unlock();
-			return false;
-		}
-		else
-		{
-			pred->next = n;
-			n->next = curr;
-		}
-
-		set_lock.unlock();
-		return true;
-	}
-
-	bool remove(int x)
-	{
-		set_lock.lock();
-		Node* pred = head;
-		Node* curr = head->next;
-
-		// pred < x <= curr
-		while (curr->value < x) {
-			pred = curr;
-			curr = curr->next;
-		}
-
-		if (curr->value == x)
-		{
-			pred->next = curr->next;
-			delete curr;
-		}
-		else {
-			set_lock.unlock();
+		if (curr->value == x) {
+			curr->unlock();
+			pred->unlock();
 			return false;
 		}
 
-		set_lock.unlock();
+		Node* n = new Node(x);
+		n->next = curr;
+		pred->next = n;
+
+		curr->unlock();
+		pred->unlock();
 		return true;
 	}
 
-	bool contains(int x)
-	{
-		set_lock.lock();
-		Node* curr = head->next;
+	bool remove(int x) {
+		Node* pred = head;
+		pred->lock();
+		Node* curr = pred->next;
+		curr->lock();
 
-		while (curr->value < x)
-			curr = curr->next;
-
+		while (curr->value < x) {
+			Node* next = curr->next;
+			next->lock();
+			pred->unlock();
+			pred = curr;
+			curr = next;
+		}
 
 		if (curr->value != x) {
-			set_lock.unlock();
+			curr->unlock();
+			pred->unlock();
 			return false;
 		}
 
-		set_lock.unlock();
+		// pred, curr 모두 잠긴 상태에서만 링크 수정
+		pred->next = curr->next;
+		curr->unlock();
+		pred->unlock();
+		delete curr;
 		return true;
 	}
 
+	bool contains(int x) {
+		Node* pred = head;
+		pred->lock();
+		Node* curr = pred->next;
+		curr->lock();
+
+		while (curr->value < x) {
+			pred->unlock();
+			Node* next = curr->next;
+			next->lock();
+			pred = curr;
+			curr = next;
+		}
+
+		bool found = (curr->value == x);
+		curr->unlock();
+		pred->unlock();
+		return found;
+	}
 	void print20()
 	{
 		Node* curr = head->next;
