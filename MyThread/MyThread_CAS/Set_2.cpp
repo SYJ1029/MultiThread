@@ -58,75 +58,84 @@ public:
 		Node* pred = head;
 		pred->lock();
 		Node* curr = pred->next;
-		//curr->lock();
+		curr->lock();
 
 		// pred->value < x <= curr->value
 		while (curr->value < x) {
-			//Node* next = curr->next;
-			curr->lock();         // 1) 다음을 먼저 잠그고
-			pred->unlock();       // 2) 이전을 푼다
-			pred = curr;          // 3) 전진
+			pred = curr;          
 			curr = curr->next;
+			curr->lock();
+			pred->unlock();
 		}
 
 		if (curr->value == x) {
-			curr->unlock();
 			pred->unlock();
+			curr->unlock();
 			return false;
 		}
+		else {
 
-		Node* n = new Node(x);
-		n->next = curr;
-		pred->next = n;
+			Node* n = new Node(x);
+			n->next = curr;
+			pred->next = n;
 
-		curr->unlock();
-		pred->unlock();
-		return true;
+			curr->unlock();
+			pred->unlock();
+			return true;
+		}
+
+		return false;
 	}
 
 	bool remove(int x) {
 		Node* pred = head;
 		pred->lock();
 		Node* curr = pred->next;
-		//curr->lock();
+		curr->lock();
 
 		while (curr->value < x) {
-			curr->lock();
 			pred->unlock();
 			pred = curr;
 			curr = curr->next;
+
+			curr->lock();
 		}
 
 		if (curr->value != x) {
-			curr->unlock();
 			pred->unlock();
+			curr->unlock();
 			return false;
 		}
+		else {
+			pred->next = curr->next;
 
-		// pred, curr 모두 잠긴 상태에서만 링크 수정
-		pred->next = curr->next;
-		curr->unlock();
-		pred->unlock();
-		delete curr;
-		return true;
+			pred->unlock();
+			curr->unlock();
+
+			delete curr;
+			return true;
+		}
+
+		return false;
 	}
 
 	bool contains(int x) {
 		Node* pred = head;
 		pred->lock();
 		Node* curr = pred->next;
-		//curr->lock();
+		curr->lock();
 
 		while (curr->value < x) {
 			pred->unlock();
-			curr->lock();
 			pred = curr;
 			curr = curr->next;
+			curr->lock();
 		}
 
 		bool found = (curr->value == x);
-		curr->unlock();
+
 		pred->unlock();
+		curr->unlock();
 		return found;
 	}
 	void print20()
