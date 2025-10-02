@@ -6,6 +6,8 @@
 
 const int MAX_THREADS = 16;
 
+// 이동 시에 lock이 걸려있지 않도록 주의
+
 class Node
 {
 public:
@@ -62,10 +64,7 @@ public:
 
 		// pred->value < x <= curr->value
 		while (curr->value < x) {
-			//Node* next = curr->next;
-			curr->next->lock();         // 1) 다음을 먼저 잠그고
-			pred->unlock();       // 2) 이전을 푼다
-			pred = curr;          // 3) 전진
+			pred = curr;
 			curr = curr->next;
 		}
 
@@ -91,8 +90,6 @@ public:
 		curr->lock();
 
 		while (curr->value < x) {
-			curr->next->lock();
-			pred->unlock();
 			pred = curr;
 			curr = curr->next;
 		}
@@ -118,8 +115,6 @@ public:
 		curr->lock();
 
 		while (curr->value < x) {
-			pred->unlock();
-			curr->next->lock();
 			pred = curr;
 			curr = curr->next;
 		}
