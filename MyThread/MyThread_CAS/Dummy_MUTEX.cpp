@@ -14,12 +14,17 @@ public:
 	Node(int val) : value(val), next(nullptr) {}
 };
 
+struct DUMMY_MUTEX {
+	void lock() {}
+	void unlock() {}
+};
+
 
 class C_SET
 {
 private:
 	Node* head, * tail;
-	std::mutex set_lock;
+	DUMMY_MUTEX set_lock;
 public:
 	C_SET()
 	{
@@ -36,10 +41,10 @@ public:
 		delete tail;
 	}
 
-	void clear() 
+	void clear()
 	{
 		Node* curr = head->next;
-		while(curr != tail)
+		while (curr != tail)
 		{
 			Node* temp = curr;
 			curr = curr->next;
@@ -150,19 +155,19 @@ void Benchmark(const int num_thread)
 
 	for (int i = 0; i < loop_count; i++) {
 		switch (rand() % 3) {
-		case 0: 
+		case 0:
 			key = rand() % KEY_RANGE;
 			clist.add(key);
 			break;
-		case 1: 
+		case 1:
 			key = rand() % KEY_RANGE;
 			clist.remove(key);
 			break;
-		case 2: 
+		case 2:
 			key = rand() % KEY_RANGE;
 			clist.contains(key);
 			break;
-		default: 
+		default:
 			std::cout << "Error\n";
 			exit(-1);
 		}
@@ -172,9 +177,9 @@ void Benchmark(const int num_thread)
 int main()
 {
 	std::cout << "<C_SET Å×½ºÆ®>\n\n";
-	
+
 	using namespace std::chrono;
-	for(int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+	for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
 	{
 		clist.clear();
 		auto start = high_resolution_clock::now();
