@@ -23,12 +23,12 @@ private:
 };
 
 
-class C_SET
+class O_SET
 {
 private:
 	Node* head, * tail;
 public:
-	C_SET()
+	O_SET()
 	{
 		// Set의 범위는 [0, 1000]으로 제한하겠음
 		head = new Node(INT_MIN);
@@ -36,7 +36,7 @@ public:
 		head->next = tail;
 	}
 
-	~C_SET()
+	~O_SET()
 	{
 		clear();
 		delete head;
@@ -123,7 +123,7 @@ public:
 				pred->next = curr->next;
 				curr->unlock();
 				pred->unlock();
-				delete curr;
+				//delete curr;		// 낙천적 동기화에서는 실행하면 안되는 코드. 왜 일까?
 				return true;
 			}
 
@@ -181,7 +181,7 @@ public:
 
 
 
-C_SET clist;
+O_SET clist;
 
 const auto NUM_TEST = 4000000;
 const auto KEY_RANGE = 1000;
@@ -220,7 +220,7 @@ int main()
 	std::cout << "<C_SET 테스트>\n\n";
 
 	using namespace std::chrono;
-	for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2)
+	for (int num_threads = MAX_THREADS; num_threads >= 1; num_threads /= 2)
 	{
 		clist.clear();
 		auto start = high_resolution_clock::now();
