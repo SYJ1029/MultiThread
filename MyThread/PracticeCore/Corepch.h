@@ -12,6 +12,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <mutex>
 #include "framework.h"
 
 using namespace std::chrono;
