@@ -1,28 +1,59 @@
 #pragma once
 
-#include "Node_Shared.h"
-//#include <vector>
+#include "Node_raw.h"
+#include <queue>
+
+std::queue<Node*> node_pool;
+std::mutex pool_lock;
+
+void recycle_nodes()
+{
+	while (false == node_pool.empty())
+	{
+		auto n = node_pool.front();
+		node_pool.pop();
+		delete n;
+	}
+}
+
+Node* GetNewNode(int x) {
+	return new Node(x);
+}
+
+void DeleteNode(Node* node) {
+	std::lock_guard<std::mutex> lg(pool_lock);
+	node_pool.push(node);
+}
 
 typedef class L_SET
 {
 private:
-	std::shared_ptr<Node> head, tail;
+	Node* head, * tail;
 public:
 	L_SET()
 	{
 		// Set의 범위는 [0, 1000]으로 제한하겠음
-		head = std::make_shared<Node>(INT_MIN);
-		tail = std::make_shared<Node>(INT_MAX);
+		head = new Node(INT_MIN);
+		tail = new Node(INT_MAX);
 		head->next = tail;
 	}
 
 	~L_SET()
 	{
 		clear();
+		delete head;
+		delete tail;
 	}
 
 	void clear()
 	{
+		Node* curr = head->next;
+		while (curr != tail)
+		{
+			Node* temp = curr;
+			curr = curr->next;
+			delete temp;
+		}
 		head->next = tail;
 	}
 
@@ -30,8 +61,8 @@ public:
 
 
 		while (true) {
-			std::shared_ptr<Node> pred(head);
-			auto curr = pred->next;
+			Node* pred = head;
+			Node* curr = pred->next;
 
 			while (curr->value < x) {
 				pred = curr;
@@ -42,7 +73,7 @@ public:
 			pred->lock();
 			curr->lock();
 			if (validate(pred, curr)) {
-				std::shared_ptr<Node> n = std::make_shared<Node>(x);
+				auto n = GetNewNode(x);
 
 				if (curr->value == x) {
 					curr->unlock();
@@ -73,8 +104,8 @@ public:
 	bool remove(int x) {
 
 		while (true) {
-			std::shared_ptr<Node> pred(head);
-			std::shared_ptr<Node> curr = pred->next;
+			Node* pred = head;
+			Node* curr = pred->next;
 
 			while (curr->value < x) {
 				pred = curr;
@@ -90,11 +121,12 @@ public:
 					return false;
 				}
 
-				curr->marked = true; // 논리적 삭제
+				curr->removed = true; // 논리적 삭제
 
 				pred->next = curr->next;
 				curr->unlock();
 				pred->unlock();
+				DeleteNode(curr);
 				return true;
 			}
 
@@ -106,8 +138,8 @@ public:
 
 	bool contains(int x) {
 		while (true) {
-			std::shared_ptr<Node> pred(head);
-			std::shared_ptr<Node> curr = pred->next;
+			Node* pred = head;
+			Node* curr = pred->next;
 
 			while (curr->value < x) {
 				pred = curr;
@@ -131,15 +163,23 @@ public:
 		return false;
 	}
 
-	bool validate(const std::shared_ptr<Node>& pred, const std::shared_ptr<Node>& curr) {
-		return !pred->marked && !curr->marked && pred->next == curr;
+	bool validate(Node* pred, Node* curr) {
+		return !pred->removed && !curr->removed && pred->next == curr;
 	}
+
+
+	
+
+
+
+
 
 	void print20()
 	{
-		std::shared_ptr<Node> curr(head->next);
+		Node* curr = head->next;
 		for (int i = 0; i < 20 && curr != tail; i++, curr = curr->next)
 			std::cout << curr->value << " ";
 		std::cout << std::endl;
 	}
 }SET;
+

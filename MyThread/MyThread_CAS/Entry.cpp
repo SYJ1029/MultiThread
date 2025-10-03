@@ -1,4 +1,4 @@
-#include "lazy.h"
+#include "lazy_Sharedptr.h"
 #include <array>
 
 const int MAX_THREADS = 16;
@@ -128,6 +128,8 @@ int main()
 			threads[i].join();
 		auto ed = high_resolution_clock::now();
 		auto time_span = duration_cast<milliseconds>(ed - st).count();
+		//recycle_nodes();
+		
 		std::cout << "Thread Count = " << num_threads << ", Exec Time = " << time_span << "ms.\n";
 		std::cout << "Result : ";  clist.print20();
 	}
@@ -147,6 +149,7 @@ int main()
 			auto end_t = system_clock::now();
 			auto exec_t = end_t - start_t;
 			auto exec_ms = duration_cast<milliseconds>(exec_t).count();
+			//recycle_nodes();
 
 			std::cout << i << " Threads : SET = ";
 			clist.print20();

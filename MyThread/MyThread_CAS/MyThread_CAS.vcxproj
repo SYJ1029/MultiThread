@@ -175,6 +175,7 @@
     <ClInclude Include="Coarse_Grained.h" />
     <ClInclude Include="Fine_Grained.h" />
     <ClInclude Include="lazy.h" />
+    <ClInclude Include="lazy_NML.h" />
     <ClInclude Include="lazy_Sharedptr.h" />
     <ClInclude Include="Node_Shared.h" />
     <ClInclude Include="Node_raw.h" />
