@@ -1,4 +1,4 @@
-#include "lazy_ASP.h"
+#include "lazy.h"
 #include <array>
 
 const int MAX_THREADS = 16;

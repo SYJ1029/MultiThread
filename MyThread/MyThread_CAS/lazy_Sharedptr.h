@@ -31,7 +31,7 @@ public:
 
 		while (true) {
 			std::shared_ptr<Node> pred(head);
-			auto curr = pred->next;
+			std::shared_ptr<Node> curr = pred->next;
 
 			while (curr->value < x) {
 				pred = curr;

@@ -315,8 +315,8 @@ class L_SET_SP {
 public:
 	L_SET_SP() {
 		/* 값을 0부터 1000까지로 제한하겠음 */
-		head = std::make_shared<NODE_SP>(-1);
-		tail = std::make_shared<NODE_SP>(1000000001);
+		head = std::make_shared<NODE_SP>(INT_MIN);
+		tail = std::make_shared<NODE_SP>(INT_MAX);
 		head->next = tail;
 	}
 
@@ -327,25 +327,113 @@ public:
 		head->next = tail;
 	}
 
-	bool validate(const std::shared_ptr<NODE_SP> &pred, 
-		const std::shared_ptr<NODE_SP> curr) {
-		return (pred->removed == false)
-			&& (curr->removed == false)
-			&& (pred->next == curr);
+	bool validate(const std::shared_ptr<NODE_SP>& pred, const std::shared_ptr<NODE_SP>& curr) {
+		return !pred->removed && !curr->removed && pred->next == curr;
 	}
 
-	bool add(int x)
-	{
-		return true;
+	bool add(int x) {
+
+
+		while (true) {
+			std::shared_ptr<NODE_SP> pred(head);
+			std::shared_ptr<NODE_SP> curr = pred->next;
+
+			while (curr->value < x) {
+				pred = curr;
+				curr = curr->next;
+			}
+
+			// 여기서 pred와 curr에 lock을 건다
+			pred->lock();
+			curr->lock();
+			if (validate(pred, curr)) {
+				std::shared_ptr<NODE_SP> n = std::make_shared<NODE_SP>(x);
+
+				if (curr->value == x) {
+					curr->unlock();
+					pred->unlock();
+					return false;
+				}
+
+				n->next = curr;
+				pred->next = n;
+
+				curr->unlock();
+				pred->unlock();
+				return true;
+			}
+
+
+			// validate 실패 시, 잠금 해제 후 다시 시도
+			pred->unlock();
+			curr->unlock();
+
+		}
+
+		// while문을 빠져나와 여기에 도달하는 break문은 없으므로 도달해서는 안되는 코드
+		// 이곳에 도달했다면 무엇인가 잘못된 것
+		return false;
 	}
 
-	bool remove(int x)
-	{
-		return true;
+	bool remove(int x) {
+
+		while (true) {
+			std::shared_ptr<NODE_SP> pred(head);
+			std::shared_ptr<NODE_SP> curr = pred->next;
+
+			while (curr->value < x) {
+				pred = curr;
+				curr = curr->next;
+			}
+			pred->lock();
+			curr->lock();
+
+			if (validate(pred, curr)) {
+				if (curr->value != x) {
+					curr->unlock();
+					pred->unlock();
+					return false;
+				}
+
+				curr->removed = true; // 논리적 삭제
+
+				pred->next = curr->next;
+				curr->unlock();
+				pred->unlock();
+				return true;
+			}
+
+			pred->unlock();
+			curr->unlock();
+		}
+		return false;
 	}
-	bool contains(int x)
-	{
-		return true;
+
+	bool contains(int x) {
+		while (true) {
+			std::shared_ptr<NODE_SP> pred(head);
+			std::shared_ptr<NODE_SP> curr = pred->next;
+
+			while (curr->value < x) {
+				pred = curr;
+				curr = curr->next;
+			}
+
+			pred->lock();
+			curr->lock();
+			if (validate(pred, curr)) {
+
+				bool found = (curr->value == x);
+				curr->unlock();
+				pred->unlock();
+				return found;
+			}
+
+			pred->unlock();
+			curr->unlock();
+		}
+
+		return false;
 	}
 
 	void print20()
@@ -435,11 +523,10 @@ public:
 	}
 };
 
-L_SET_NML clist;
+L_SET_SP clist;
 
 const int NUM_TEST = 4000000;
 const int KEY_RANGE = 1000;
-
 
 
 class HISTORY {
@@ -549,7 +636,7 @@ void benchmark(const int num_thread)
 int main()
 {
 	using namespace std::chrono;
-	for (int num_threads = MAX_THREADS; num_threads >= 1; num_threads /= 2) {
+	for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2) {
 		clist.clear();
 		auto st = high_resolution_clock::now();
 		std::vector<std::thread> threads;
