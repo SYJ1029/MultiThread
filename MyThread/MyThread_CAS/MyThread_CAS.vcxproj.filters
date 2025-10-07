@@ -74,5 +74,8 @@
     <ClInclude Include="lazy_NML.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Node_AS.h">
+      <Filter>헤더 파일\Node</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

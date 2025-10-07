@@ -3,6 +3,8 @@
 #include "Node_AS.h"
 //#include <vector>
 
+#define  ASPOINTER std::atomic<std::shared_ptr<Node>>
+
 typedef class L_SET
 {
 private:
@@ -14,7 +16,7 @@ public:
 		head = std::make_shared<Node>(INT_MIN);
 		tail = std::make_shared<Node>(INT_MAX);
 
-		tail.store(head.load()->next);
+		head.load()->next.store(tail);
 	}
 
 	~L_SET()
@@ -24,45 +26,47 @@ public:
 
 	void clear()
 	{
-		tail.store(head.load()->next);
+		head.load()->next.store(tail);
 	}
 
 	bool add(int x) {
 
 
 		while (true) {
-			std::shared_ptr<Node> pred(head);
-			auto curr = pred->next;
+			std::atomic<std::shared_ptr<Node>> pred;
+			pred.store(head);
+			std::atomic<std::shared_ptr<Node>> curr;
+			curr.store(pred.load()->next);
 
-			while (curr->value < x) {
-				pred = curr;
-				curr = curr->next;
+			while (curr.load()->value < x) {
+				pred.store(curr);
+				curr.store(curr.load()->next);
 			}
 
 			// 여기서 pred와 curr에 lock을 건다
-			pred->lock();
-			curr->lock();
+			pred.load()->lock();
+			curr.load()->lock();
 			if (validate(pred, curr)) {
-				std::shared_ptr<Node> n = std::make_shared<Node>(x);
+				std::atomic<std::shared_ptr<Node>> n = std::make_shared<Node>(x);
 
-				if (curr->value == x) {
-					curr->unlock();
-					pred->unlock();
+				if (curr.load()->value == x) {
+					curr.load()->unlock();
+					pred.load()->unlock();
 					return false;
 				}
 
-				n->next = curr;
-				pred->next = n;
+				n.load()->next.store(curr);
+				pred.load()->next.store(n);
 
-				curr->unlock();
-				pred->unlock();
+				curr.load()->unlock();
+				pred.load()->unlock();
 				return true;
 			}
 
 
 			// validate 실패 시, 잠금 해제 후 다시 시도
-			pred->unlock();
-			curr->unlock();
+			pred.load()->unlock();
+			curr.load()->unlock();
 
 		}
 
@@ -74,73 +78,75 @@ public:
 	bool remove(int x) {
 
 		while (true) {
-			std::shared_ptr<Node> pred(head);
-			std::shared_ptr<Node> curr = pred->next;
+			std::atomic<std::shared_ptr<Node>> pred;
+			pred.store(head);
+			std::atomic<std::shared_ptr<Node>> curr;
+			curr.store(pred.load()->next);
 
-			while (curr->value < x) {
-				pred = curr;
-				curr = curr->next;
+			while (curr.load()->value < x) {
+				pred.store(curr);
+				curr.store(curr.load()->next);
 			}
-			pred->lock();
-			curr->lock();
+			pred.load()->lock();
+			curr.load()->lock();
 
 			if (validate(pred, curr)) {
-				if (curr->value != x) {
-					curr->unlock();
-					pred->unlock();
+				if (curr.load()->value != x) {
+					curr.load()->unlock();
+					pred.load()->unlock();
 					return false;
 				}
 
-				curr->marked = true; // 논리적 삭제
+				curr.load()->marked = true; // 논리적 삭제
 
-				pred->next = curr->next;
-				curr->unlock();
-				pred->unlock();
+				pred.load()->next.store(curr.load()->next);
+				curr.load()->unlock();
+				pred.load()->unlock();
 				return true;
 			}
 
-			pred->unlock();
-			curr->unlock();
+			pred.load()->unlock();
+			curr.load()->unlock();
 		}
 		return false;
 	}
 
 	bool contains(int x) {
 		while (true) {
-			std::shared_ptr<Node> pred(head);
-			std::shared_ptr<Node> curr = pred->next;
+			std::atomic<std::shared_ptr<Node>> pred; pred.store(head);
+			std::atomic<std::shared_ptr<Node>> curr; curr.store(pred.load()->next);
 
-			while (curr->value < x) {
-				pred = curr;
-				curr = curr->next;
+			while (curr.load()->value < x) {
+				pred.store(curr);
+				curr.store(curr.load()->next);
 			}
 
-			pred->lock();
-			curr->lock();
+			pred.load()->lock();
+			curr.load()->lock();
 			if (validate(pred, curr)) {
 
-				bool found = (curr->value == x);
-				curr->unlock();
-				pred->unlock();
+				bool found = (curr.load()->value == x);
+				curr.load()->unlock();
+				pred.load()->unlock();
 				return found;
 			}
 
-			pred->unlock();
-			curr->unlock();
+			pred.load()->unlock();
+			curr.load()->unlock();
 		}
 
 		return false;
 	}
 
-	bool validate(const std::shared_ptr<Node>& pred, const std::shared_ptr<Node>& curr) {
-		return !pred->marked && !curr->marked && pred->next == curr;
+	bool validate(const ASPOINTER& pred, const ASPOINTER& curr) {
+		return !pred.load()->marked && !curr.load()->marked && pred.load()->next.load() == curr.load();
 	}
 
 	void print20()
 	{
-		std::shared_ptr<Node> curr(head->next);
-		for (int i = 0; i < 20 && curr != tail; i++, curr = curr->next)
-			std::cout << curr->value << " ";
+		ASPOINTER curr; curr.store(head.load()->next);
+		for (int i = 0; i < 20 && curr.load() != tail.load(); i++, curr.exchange(curr.load()->next))
+			std::cout << curr.load()->value << " ";
 		std::cout << std::endl;
 	}
 }SET;
