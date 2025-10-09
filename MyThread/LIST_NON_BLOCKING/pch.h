@@ -1,5 +1,8 @@
 #pragma once
 
+//#ifndef PCH_H
+//#define PCH_H
+
 #ifdef _DEBUG
 #pragma comment(lib, "Debug\\PracticeCore.lib")
 #else
@@ -8,3 +11,5 @@
 
 
 #include "Corepch.h"
+
+//#endif

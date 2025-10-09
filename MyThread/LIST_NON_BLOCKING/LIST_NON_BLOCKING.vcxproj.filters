@@ -21,6 +21,9 @@
     <ClCompile Include="Node.cpp">
       <Filter>Node</Filter>
     </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Pch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Node.h">
