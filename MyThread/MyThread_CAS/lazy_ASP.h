@@ -5,12 +5,12 @@
 
 #define  ASPOINTER std::atomic<std::shared_ptr<Node>>
 
-typedef class L_SET
+typedef class L_SET_ASP
 {
 private:
 	std::atomic<std::shared_ptr<Node>> head, tail;
 public:
-	L_SET()
+	L_SET_ASP()
 	{
 		// Set의 범위는 [0, 1000]으로 제한하겠음
 		head = std::make_shared<Node>(INT_MIN);
@@ -19,7 +19,7 @@ public:
 		head.load()->next.store(tail);
 	}
 
-	~L_SET()
+	~L_SET_ASP()
 	{
 		clear();
 	}

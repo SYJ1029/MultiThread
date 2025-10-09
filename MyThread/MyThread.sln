@@ -13,9 +13,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyThread_Peterson", "MyThre
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PracticeCore", "PracticeCore\PracticeCore.vcxproj", "{48940761-8391-4A45-A1FF-BA4BE9E1CA29}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyThread_CAS", "MyThread_CAS\MyThread_CAS.vcxproj", "{DF91F6F2-6F55-4D73-B622-66A3402C048E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LIST_BLOCKING", "MyThread_CAS\MyThread_CAS.vcxproj", "{DF91F6F2-6F55-4D73-B622-66A3402C048E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NB_List", "NB_List\NB_List.vcxproj", "{46D1B646-67C4-4DDE-8903-00256A491B52}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LIST_NON_BLOCKING", "LIST_NON_BLOCKING\LIST_NON_BLOCKING.vcxproj", "{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +83,14 @@ Global
 		{46D1B646-67C4-4DDE-8903-00256A491B52}.Release|x64.Build.0 = Release|x64
 		{46D1B646-67C4-4DDE-8903-00256A491B52}.Release|x86.ActiveCfg = Release|Win32
 		{46D1B646-67C4-4DDE-8903-00256A491B52}.Release|x86.Build.0 = Release|Win32
+		{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}.Debug|x64.ActiveCfg = Debug|x64
+		{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}.Debug|x64.Build.0 = Debug|x64
+		{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}.Debug|x86.ActiveCfg = Debug|Win32
+		{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}.Debug|x86.Build.0 = Debug|Win32
+		{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}.Release|x64.ActiveCfg = Release|x64
+		{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}.Release|x64.Build.0 = Release|x64
+		{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}.Release|x86.ActiveCfg = Release|Win32
+		{0B811A05-3C3C-44BD-ADF3-C8AD36A292B0}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

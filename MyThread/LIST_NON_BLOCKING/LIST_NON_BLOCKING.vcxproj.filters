@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Entry">
+      <UniqueIdentifier>{67b30464-1515-41a1-b9b3-3d523029e140}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Node">
+      <UniqueIdentifier>{63feb63f-61a9-4b8f-ad18-f011ee12962e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="LIST">
+      <UniqueIdentifier>{80488939-8a61-4aa5-b707-884ca1826e37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pch">
+      <UniqueIdentifier>{7c70ce09-2ca0-4558-a460-15ce2fa8cd49}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Entry.cpp">
+      <Filter>Entry</Filter>
+    </ClCompile>
+    <ClCompile Include="Node.cpp">
+      <Filter>Node</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Node.h">
+      <Filter>Node</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Pch</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
