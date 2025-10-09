@@ -1,4 +1,4 @@
-#include "lazy.h"
+#include "lazy_AL.h"
 #include <array>
 
 const int MAX_THREADS = 16;
