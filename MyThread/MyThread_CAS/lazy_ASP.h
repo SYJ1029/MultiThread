@@ -33,40 +33,38 @@ public:
 
 
 		while (true) {
-			std::atomic<std::shared_ptr<Node>> pred;
-			pred.store(head);
-			std::atomic<std::shared_ptr<Node>> curr;
-			curr.store(pred.load()->next);
+			std::shared_ptr<Node> pred(head);
+			std::shared_ptr<Node> curr = pred -> next;
 
-			while (curr.load()->value < x) {
-				pred.store(curr);
-				curr.store(curr.load()->next);
+			while (curr->value < x) {
+				pred = (curr);
+				curr = curr->next;
 			}
 
 			// 여기서 pred와 curr에 lock을 건다
-			pred.load()->lock();
-			curr.load()->lock();
+			pred->lock();
+			curr->lock();
 			if (validate(pred, curr)) {
 				std::atomic<std::shared_ptr<Node>> n = std::make_shared<Node>(x);
 
-				if (curr.load()->value == x) {
-					curr.load()->unlock();
-					pred.load()->unlock();
+				if (curr->value == x) {
+					curr->unlock();
+					pred->unlock();
 					return false;
 				}
 
-				n.load()->next.store(curr);
-				pred.load()->next.store(n);
+				n.load()->next = (curr);
+				pred->next.store(n);
 
-				curr.load()->unlock();
-				pred.load()->unlock();
+				curr->unlock();
+				pred->unlock();
 				return true;
 			}
 
 
 			// validate 실패 시, 잠금 해제 후 다시 시도
-			pred.load()->unlock();
-			curr.load()->unlock();
+			pred->unlock();
+			curr->unlock();
 
 		}
 
@@ -78,68 +76,67 @@ public:
 	bool remove(int x) {
 
 		while (true) {
-			std::atomic<std::shared_ptr<Node>> pred;
-			pred.store(head);
-			std::atomic<std::shared_ptr<Node>> curr;
-			curr.store(pred.load()->next);
+			std::shared_ptr<Node> pred(head);
+			std::shared_ptr<Node> curr = pred->next;
 
-			while (curr.load()->value < x) {
-				pred.store(curr);
-				curr.store(curr.load()->next);
+			while (curr->value < x) {
+				pred = (curr);
+				curr = curr->next;
 			}
-			pred.load()->lock();
-			curr.load()->lock();
+
+			pred->lock();
+			curr->lock();
 
 			if (validate(pred, curr)) {
-				if (curr.load()->value != x) {
-					curr.load()->unlock();
-					pred.load()->unlock();
+				if (curr->value != x) {
+					curr->unlock();
+					pred->unlock();
 					return false;
 				}
 
-				curr.load()->marked = true; // 논리적 삭제
+				curr->marked = true; // 논리적 삭제
 
-				pred.load()->next.store(curr.load()->next);
-				curr.load()->unlock();
-				pred.load()->unlock();
+				pred->next.store(curr->next);
+				curr->unlock();
+				pred->unlock();
 				return true;
 			}
 
-			pred.load()->unlock();
-			curr.load()->unlock();
+			pred->unlock();
+			curr->unlock();
 		}
 		return false;
 	}
 
 	bool contains(int x) {
 		while (true) {
-			std::atomic<std::shared_ptr<Node>> pred; pred.store(head);
-			std::atomic<std::shared_ptr<Node>> curr; curr.store(pred.load()->next);
+			std::shared_ptr<Node> pred(head);
+			std::shared_ptr<Node> curr = pred->next;
 
-			while (curr.load()->value < x) {
-				pred.store(curr);
-				curr.store(curr.load()->next);
+			while (curr->value < x) {
+				pred = (curr);
+				curr = curr->next;
 			}
 
-			pred.load()->lock();
-			curr.load()->lock();
+			pred->lock();
+			curr->lock();
 			if (validate(pred, curr)) {
 
-				bool found = (curr.load()->value == x);
-				curr.load()->unlock();
-				pred.load()->unlock();
+				bool found = (curr->value == x);
+				curr->unlock();
+				pred->unlock();
 				return found;
 			}
 
-			pred.load()->unlock();
-			curr.load()->unlock();
+			pred->unlock();
+			curr->unlock();
 		}
 
 		return false;
 	}
 
-	bool validate(const ASPOINTER& pred, const ASPOINTER& curr) {
-		return !pred.load()->marked && !curr.load()->marked && pred.load()->next.load() == curr.load();
+	bool validate(const std::shared_ptr<Node>& pred, const std::shared_ptr<Node>& curr) {
+		return !pred->marked && !curr->marked && pred->next.load() == curr;
 	}
 
 	void print20()

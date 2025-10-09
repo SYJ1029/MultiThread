@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Node_Shared.h"
-//#include <vector>
+#include <vector>
 
-typedef class L_SET
+typedef class L_SET_AL
 {
 private:
 	std::shared_ptr<Node> head, tail;
 public:
-	L_SET()
+	L_SET_AL()
 	{
 		// Set의 범위는 [0, 1000]으로 제한하겠음
 		head = std::make_shared<Node>(INT_MIN);
@@ -16,7 +16,7 @@ public:
 		head->next = tail;
 	}
 
-	~L_SET()
+	~L_SET_AL()
 	{
 		clear();
 	}
