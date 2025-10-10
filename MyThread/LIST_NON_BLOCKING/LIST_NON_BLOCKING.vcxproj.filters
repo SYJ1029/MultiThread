@@ -24,6 +24,9 @@
     <ClCompile Include="pch.cpp">
       <Filter>Pch</Filter>
     </ClCompile>
+    <ClCompile Include="Lock_free_List.cpp">
+      <Filter>LIST</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Node.h">
@@ -31,6 +34,9 @@
     </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Pch</Filter>
+    </ClInclude>
+    <ClInclude Include="Lock_Free_List.h">
+      <Filter>LIST</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
