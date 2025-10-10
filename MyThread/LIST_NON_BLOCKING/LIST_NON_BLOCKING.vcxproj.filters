@@ -18,25 +18,16 @@
     <ClCompile Include="Entry.cpp">
       <Filter>Entry</Filter>
     </ClCompile>
-    <ClCompile Include="Node.cpp">
-      <Filter>Node</Filter>
-    </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Pch</Filter>
     </ClCompile>
-    <ClCompile Include="Lock_free_List.cpp">
-      <Filter>LIST</Filter>
+    <ClCompile Include="SET (2).cpp">
+      <Filter>Entry</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Node.h">
-      <Filter>Node</Filter>
-    </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Pch</Filter>
-    </ClInclude>
-    <ClInclude Include="Lock_Free_List.h">
-      <Filter>LIST</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
