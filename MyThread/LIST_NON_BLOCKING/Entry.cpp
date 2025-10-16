@@ -1,10 +1,9 @@
 #include "pch.h"
-#include "Lock_free_List.h"
+#include "LF_SET_EBR.h"
 
 
 #include <array>
 
-const int MAX_THREADS = 16;
 
 SET clist;
 
@@ -66,6 +65,7 @@ void check_history(int num_threads)
 
 void Benchmark_check(const int num_threads, int th_id)
 {
+	thread_id = th_id;
 	for (int i = 0; i < NUM_TEST / num_threads; ++i) {
 		int op = rand() % 3;
 		switch (op) {
@@ -89,10 +89,10 @@ void Benchmark_check(const int num_threads, int th_id)
 }
 
 
-void Benchmark(const int num_thread)
+void Benchmark(const int num_thread, int th_id)
 {
 	const int loop_count = NUM_TEST / num_thread;
-
+	thread_id = th_id;
 	int key{ 0 };
 
 	for (int i = 0; i < loop_count; i++) {
@@ -121,12 +121,12 @@ void Benchmark(const int num_thread)
 int main()
 {
 	using namespace std::chrono;
-	for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2) {
+	for (num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2) {
 		clist.clear();
 		auto st = high_resolution_clock::now();
 		std::vector<std::thread> threads;
 		for (int i = 0; i < num_threads; ++i)
-			threads.emplace_back(Benchmark, num_threads);
+			threads.emplace_back(Benchmark, num_threads, i);
 		for (int i = 0; i < num_threads; ++i)
 			threads[i].join();
 		auto ed = high_resolution_clock::now();
@@ -137,16 +137,16 @@ int main()
 		std::cout << "Result : ";  clist.print20();
 	}
 
-	// 알고리즘 정확성 검사
+	 //알고리즘 정확성 검사
 	std::cout << "\n Checking for consistency.\n\n";
 	{
-		for (int i = 1; i <= MAX_THREADS; i = i * 2) {
+		for (num_threads = 1; num_threads <= MAX_THREADS; num_threads = num_threads * 2) {
 			std::vector <std::thread> threads;
 			clist.clear();
 			for (auto& h : history) h.clear();
 			auto start_t = system_clock::now();
-			for (int j = 0; j < i; ++j)
-				threads.emplace_back(Benchmark_check, i, j);
+			for (int j = 0; j < num_threads; ++j)
+				threads.emplace_back(Benchmark_check, num_threads, j);
 			for (auto& th : threads)
 				th.join();
 			auto end_t = system_clock::now();
@@ -154,10 +154,10 @@ int main()
 			auto exec_ms = duration_cast<milliseconds>(exec_t).count();
 			//recycle_nodes();
 
-			std::cout << i << " Threads : SET = ";
+			std::cout << num_threads << " Threads : SET = ";
 			clist.print20();
 			std::cout << "Exec time = " << exec_ms << "ms.  ";
-			check_history(i);
+			check_history(num_threads);
 		}
 	}
 }

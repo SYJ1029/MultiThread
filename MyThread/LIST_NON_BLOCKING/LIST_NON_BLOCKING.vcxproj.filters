@@ -29,5 +29,17 @@
     <ClInclude Include="pch.h">
       <Filter>Pch</Filter>
     </ClInclude>
+    <ClInclude Include="LF_NODE.h">
+      <Filter>Node</Filter>
+    </ClInclude>
+    <ClInclude Include="LF_SET.h">
+      <Filter>LIST</Filter>
+    </ClInclude>
+    <ClInclude Include="LF_SET_EBR.h">
+      <Filter>LIST</Filter>
+    </ClInclude>
+    <ClInclude Include="LF_NODE_EPOCH.h">
+      <Filter>Node</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

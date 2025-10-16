@@ -10,3 +10,4 @@
 #include "Corepch.h"
 
 
+const int MAX_THREADS = 16;

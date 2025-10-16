@@ -1,4 +1,4 @@
-#include "lazy_ASP.h"
+#include "lazy.h"
 #include <array>
 
 const int MAX_THREADS = 16;
@@ -6,7 +6,7 @@ const int MAX_THREADS = 16;
 SET clist;
 
 const auto NUM_TEST = 4000000;
-const auto KEY_RANGE = 1000;
+const auto KEY_RANGE = 100;
 
 
 class HISTORY {
