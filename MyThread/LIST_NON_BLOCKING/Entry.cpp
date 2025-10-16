@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "LF_SET_EBR.h"
+#include "LF_SET_UMAP.h"
 
 
 #include <array>
@@ -65,7 +65,9 @@ void check_history(int num_threads)
 
 void Benchmark_check(const int num_threads, int th_id)
 {
-	thread_id = th_id;
+	// id 배정
+	threadIdMap[std::this_thread::get_id()] = th_id;
+
 	for (int i = 0; i < NUM_TEST / num_threads; ++i) {
 		int op = rand() % 3;
 		switch (op) {
@@ -91,8 +93,10 @@ void Benchmark_check(const int num_threads, int th_id)
 
 void Benchmark(const int num_thread, int th_id)
 {
+	// id 배정
+	threadIdMap[std::this_thread::get_id()] = th_id;
+
 	const int loop_count = NUM_TEST / num_thread;
-	thread_id = th_id;
 	int key{ 0 };
 
 	for (int i = 0; i < loop_count; i++) {

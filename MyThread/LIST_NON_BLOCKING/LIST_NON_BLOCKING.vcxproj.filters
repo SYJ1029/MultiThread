@@ -41,5 +41,8 @@
     <ClInclude Include="LF_NODE_EPOCH.h">
       <Filter>Node</Filter>
     </ClInclude>
+    <ClInclude Include="LF_SET_UMAP.h">
+      <Filter>LIST</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

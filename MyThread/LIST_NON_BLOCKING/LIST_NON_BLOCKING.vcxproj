@@ -171,6 +171,7 @@
     <ClInclude Include="LF_NODE_EPOCH.h" />
     <ClInclude Include="LF_SET.h" />
     <ClInclude Include="LF_SET_EBR.h" />
+    <ClInclude Include="LF_SET_UMAP.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
