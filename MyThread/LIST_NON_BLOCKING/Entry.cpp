@@ -127,6 +127,7 @@ int main()
 	using namespace std::chrono;
 	for (num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2) {
 		clist.clear();
+		threadIdMap.clear();
 		auto st = high_resolution_clock::now();
 		std::vector<std::thread> threads;
 		for (int i = 0; i < num_threads; ++i)
@@ -147,6 +148,7 @@ int main()
 		for (num_threads = 1; num_threads <= MAX_THREADS; num_threads = num_threads * 2) {
 			std::vector <std::thread> threads;
 			clist.clear();
+			threadIdMap.clear();
 			for (auto& h : history) h.clear();
 			auto start_t = system_clock::now();
 			for (int j = 0; j < num_threads; ++j)
