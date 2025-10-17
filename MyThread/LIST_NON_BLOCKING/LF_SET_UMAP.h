@@ -207,3 +207,15 @@ public:
 		std::cout << "\n";
 	}
 }SET;
+
+// thread id 설정
+void SetId(int id)
+{
+	threadIdMap[std::this_thread::get_id()] = id;
+}
+
+// thread id 초기화
+void ClearId()
+{
+	threadIdMap.clear();
+}

@@ -24,6 +24,16 @@ public:
 	~EBR() {
 		recycle_all();
 	}
+
+	void enter() {
+		epoch++;
+		thread_epochs[thread_id].thread_epoch.store(epoch);
+	}
+
+	void leave() {
+		thread_epochs[thread_id].thread_epoch.store(std::numeric_limits<int>::max());
+	}
+
 	void recycle_all() {
 		for (int i = 0; i < MAX_THREADS; ++i) {
 			while (false == node_pool[i].empty()) {
@@ -122,22 +132,21 @@ public:
 	bool add(int x)
 	{
 		//Atomic global EPOCH Counter를 증가시킨다.
-		ebr.epoch++;
-		ebr.thread_epochs[thread_id].thread_epoch.store(ebr.epoch);
+		ebr.enter();
 
 
 		while (true) {
 			LF_NODE* pred, * curr;
 			find(pred, curr, x);
 			if (curr->value == x) {
-				ebr.thread_epochs[thread_id].thread_epoch.store(std::numeric_limits<int>::max());
+				ebr.leave();
 				return false;
 			}
 			else {
 				auto n = ebr.getnode(x);
 				n->next = curr;
 				if (true == pred->next.CAS(curr, n, false, false)) {
-					ebr.thread_epochs[thread_id].thread_epoch.store(std::numeric_limits<int>::max());
+					ebr.leave();
 					return true;
 				}
 				else
@@ -148,8 +157,7 @@ public:
 
 	bool remove(int x)
 	{
-		ebr.epoch++;
-		ebr.thread_epochs[thread_id].thread_epoch.store(ebr.epoch);
+		ebr.enter();
 
 		while (true) {
 			LF_NODE* pred, * curr;
@@ -162,25 +170,28 @@ public:
 				if (true == pred->next.CAS(curr, succ, false, false))
 					ebr.recycle(curr);
 
+				ebr.leave();
 				return true;
 			}
 			else {
-				ebr.thread_epochs[thread_id].thread_epoch.store(std::numeric_limits<int>::max());
+				ebr.leave();
 				return false;
 			}
 		}
 	}
 	bool contains(int x)
 	{
-
+		ebr.enter();
 
 		while (true) {
 			LF_NODE* curr = head->next.get_ptr();
 			while (curr->value < x)
 				curr = curr->next.get_ptr();
 
+			auto res = (curr->value == x) && (curr->next.get_mark() == false);
 
-			return (curr->value == x) && (curr->next.get_mark() == false);
+			ebr.leave();
+			return res;
 		}
 	}
 
@@ -192,3 +203,12 @@ public:
 		std::cout << "\n";
 	}
 }SET;
+
+
+void SetId(int id)
+{
+	thread_id = id;
+}
+
+
+void ClearId() {} // EBR에서는 기능이 없다

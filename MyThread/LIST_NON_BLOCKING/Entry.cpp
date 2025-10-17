@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "LF_SET_UMAP.h"
+#include "LF_SET_EBR.h"
 
 
 #include <array>
@@ -66,7 +66,7 @@ void check_history(int num_threads)
 void Benchmark_check(const int num_threads, int th_id)
 {
 	// id 배정
-	threadIdMap[std::this_thread::get_id()] = th_id;
+	SetId(th_id);
 
 	for (int i = 0; i < NUM_TEST / num_threads; ++i) {
 		int op = rand() % 3;
@@ -94,7 +94,7 @@ void Benchmark_check(const int num_threads, int th_id)
 void Benchmark(const int num_thread, int th_id)
 {
 	// id 배정
-	threadIdMap[std::this_thread::get_id()] = th_id;
+	SetId(th_id);
 
 	const int loop_count = NUM_TEST / num_thread;
 	int key{ 0 };
@@ -127,7 +127,7 @@ int main()
 	using namespace std::chrono;
 	for (num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2) {
 		clist.clear();
-		threadIdMap.clear();
+		ClearId();
 		auto st = high_resolution_clock::now();
 		std::vector<std::thread> threads;
 		for (int i = 0; i < num_threads; ++i)
@@ -148,7 +148,7 @@ int main()
 		for (num_threads = 1; num_threads <= MAX_THREADS; num_threads = num_threads * 2) {
 			std::vector <std::thread> threads;
 			clist.clear();
-			threadIdMap.clear();
+			ClearId();
 			for (auto& h : history) h.clear();
 			auto start_t = system_clock::now();
 			for (int j = 0; j < num_threads; ++j)
