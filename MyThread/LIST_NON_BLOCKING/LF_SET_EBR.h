@@ -47,18 +47,21 @@ public:
 	}
 	LF_NODE* getnode(int v) {
 		if (false == node_pool[thread_id].empty()) {
+			// node_pool이 비어있지 않다면 하나를 꺼내서 재활용을 시도
 			auto n = node_pool[thread_id].front();
-			int epoch = n->epoch;
+			int epoch = n->epoch; // 꺼낸 노드의  epoch를 가지고 온다
 			bool can_use = true;
 			for (int i = 0; i < num_threads; ++i) {
-				int te = thread_epochs[i].thread_epoch;
+				int te = thread_epochs[i].thread_epoch;	// 확인하는 스레드의 epoch를 가져온다
 				if (te <= epoch) {
+					// te < epoch라는 이야기는 스레드의 함수 중 누군가는 이 노드를 아직 참조하고 있을 수 있다는 뜻
 					can_use = false;
 					break;
 				}
 			}
 
 			if (true == can_use) {
+				// 모든 스레드의 epoch가 이 노드의 epoch보다 크므로 재활용 가능
 				node_pool[thread_id].pop();
 				n->value = v;
 				n->next.set_ptr(nullptr);
@@ -68,6 +71,7 @@ public:
 		return new LF_NODE(v);
 	}
 	void recycle(LF_NODE* n) {
+		// 노드를 제거하지 않고 pool에 저장한다
 		n->epoch = epoch;
 		node_pool[thread_id].push(n);
 

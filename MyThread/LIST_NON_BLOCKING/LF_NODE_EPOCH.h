@@ -6,7 +6,7 @@
 typedef class LF_NODE_EPOCH;
 
 class MR {
-	volatile long long ptr_and_mark;
+	volatile long long ptr_and_mark;	// 마지막 비트를 마크 비트로 사용
 public:
 	MR(LF_NODE_EPOCH* p)
 	{
@@ -15,14 +15,14 @@ public:
 	MR() : ptr_and_mark(0) {}
 	LF_NODE_EPOCH* get_ptr()
 	{
-		long long temp = ptr_and_mark & 0xFFFFFFFFFFFFFFFE;
+		long long temp = ptr_and_mark & 0xFFFFFFFFFFFFFFFE; // 마지막 비트만 0
 		return reinterpret_cast<LF_NODE_EPOCH*>(temp);
 	}
 	bool get_mark() { return (ptr_and_mark & 1) == 1; }
 	void set_ptr(LF_NODE_EPOCH* p) {
 		ptr_and_mark = reinterpret_cast<long long>(p);
 	}
-	LF_NODE_EPOCH* get_ptr_and_mark(bool* mark) {
+	LF_NODE_EPOCH* get_ptr_and_mark(bool* mark) {	// 매개변수 mark를 통해 추가로 비트도 같이 얻어옴
 		long long temp = ptr_and_mark;
 		*mark = ((temp & 1) == 1);
 		temp = temp & 0xFFFFFFFFFFFFFFFE;
@@ -45,7 +45,7 @@ typedef class LF_NODE_EPOCH {
 public:
 	int value;
 	MR next;
-	volatile int epoch;
+	volatile int epoch;	//  노드마다 epoch 카운터가 생긴다.
 	LF_NODE_EPOCH(int v) : value(v) {}
 }LF_NODE;
 

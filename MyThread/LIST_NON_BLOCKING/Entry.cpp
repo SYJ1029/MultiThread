@@ -142,6 +142,7 @@ int main()
 		std::cout << "Result : ";  clist.print20();
 	}
 
+
 	 //알고리즘 정확성 검사
 	std::cout << "\n Checking for consistency.\n\n";
 	{

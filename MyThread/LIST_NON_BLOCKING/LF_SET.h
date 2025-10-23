@@ -2,6 +2,8 @@
 
 #include "LF_NODE.h"
 
+volatile int num_threads = 0;
+
 typedef class LF_SET {
 	LF_NODE* head, * tail;
 public:
@@ -110,3 +112,11 @@ public:
 		std::cout << "\n";
 	}
 }SET;
+
+
+void SetId(int id)
+{
+}
+
+
+void ClearId() {}
