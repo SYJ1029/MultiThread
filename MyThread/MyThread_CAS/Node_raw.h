@@ -17,3 +17,5 @@ public:
 private:
 	std::mutex nodeLock;
 }; 
+
+#define MAX_THREADS 16

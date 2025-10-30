@@ -1,9 +1,9 @@
-#include "lazy.h"
+#include "Coarse_Grained.h"
 #include <array>
 
-const int MAX_THREADS = 16;
+//const int MAX_THREADS = 16;
 
-SET clist;
+LFU_SET clist;
 
 const auto NUM_TEST = 4000000;
 const auto KEY_RANGE = 100;
