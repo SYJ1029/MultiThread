@@ -6,7 +6,7 @@
 #include <array>
 #include <set>
 
-const int MAX_THREADS = 16;
+const int MAX_THREADS = 32;
 
 class NODE {
 	public:
@@ -1311,8 +1311,109 @@ public:
 	}
 };
 
+class WFU_STD_SET {
+	UNODE tail;
+	UNODE* announce[MAX_THREADS];
+	UNODE* head[MAX_THREADS];
+	UNODE* max_head() {
+		UNODE* max = head[0];
+		for (int i = 1; i < num_threads; ++i) {
+			if (max->seq < head[i]->seq)
+				max = head[i];
+		}
+		return max;
+	}
+public:
+	WFU_STD_SET() {
+		tail = UNODE();
+		tail.seq = 1;
+		for (int i = 0; i < MAX_THREADS; ++i) {
+			head[i] = &tail;
+			announce[i] = &tail;
+		}
+	}
+	RESPONSE apply(INVOCATION inv) {
+		int th_id = thread_id;
+		announce[th_id] = new UNODE(inv, 0);
+		UNODE* prefer = new UNODE(inv, 0);
+		while (announce[th_id]->seq == 0) {
+			UNODE* before = max_head();
 
-LFU_SET clist;
+			UNODE* help = announce[((before->seq + 1) % MAX_THREADS)];
+			if (help->seq == 0) prefer = help;
+			else prefer = announce[th_id];
+
+			UNODE* after = before->decide_next.decide(prefer);
+			before->next = after;
+			after->seq = before->seq + 1;
+			head[th_id] = after;
+		}
+
+		SEQ_STD_SET seq_set;
+		UNODE* curr = tail.next;
+		while (curr != announce[th_id]) {
+			seq_set.apply(curr->inv);
+			curr = curr->next;
+		}
+		head[th_id] = announce[th_id];
+		return seq_set.apply(inv);
+	}
+	void clear()
+	{
+		tail.clear();
+		for (int i = 0; i < MAX_THREADS; ++i)
+			head[i] = &tail;
+	}
+	void print20()
+	{
+		SEQ_STD_SET seq_set;
+		UNODE* curr = tail.next;
+		while (curr != nullptr) {
+			seq_set.apply(curr->inv);
+			curr = curr->next;
+		}
+		seq_set.print20();
+	}
+};
+
+class WFU_SET {
+	WFU_STD_SET lfu_set;
+public:
+	WFU_SET() {
+		
+	}
+	~WFU_SET() {}
+
+	void clear() {
+		lfu_set.clear();
+	}
+
+	bool add(int x)
+	{
+		RESPONSE res = lfu_set.apply(INVOCATION(ADD, x));
+		return res.result;
+	}
+
+	bool remove(int x)
+	{
+		RESPONSE res = lfu_set.apply(INVOCATION(REMOVE, x));
+		return res.result;
+	}
+
+	bool contains(int x)
+	{
+		RESPONSE res = lfu_set.apply(INVOCATION(CONTAINS, x));
+		return res.result;
+	}
+
+	void print20()
+	{
+		lfu_set.print20();
+	}
+};
+
+
+WFU_SET clist;
 
 const int NUM_TEST = 10000;
 const int KEY_RANGE = 1000;
