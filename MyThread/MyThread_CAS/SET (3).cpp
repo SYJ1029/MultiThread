@@ -7,6 +7,7 @@
 #include <set>
 
 const int MAX_THREADS = 32;
+std::mutex wlock;
 
 class NODE {
 	public:
@@ -1196,7 +1197,7 @@ class CON_NEXT {
 	UNODE* next{ nullptr };
 	void CAS(UNODE** addr, UNODE* expected, UNODE* desired) {
 		std::atomic_compare_exchange_strong(
-			reinterpret_cast<std::atomic<UNODE*>*>(addr),
+			reinterpret_cast<volatile std::atomic<UNODE*>*>(addr),
 			&expected, desired);
 	}
 public:
@@ -1323,6 +1324,8 @@ class WFU_STD_SET {
 		}
 		return max;
 	}
+
+	
 public:
 	WFU_STD_SET() {
 		tail = UNODE();
@@ -1336,9 +1339,9 @@ public:
 		int th_id = thread_id;
 		announce[th_id] = new UNODE(inv, 0);
 		UNODE* prefer = new UNODE(inv, 0);
+		head[th_id] = max_head();
 		while (announce[th_id]->seq == 0) {
-			UNODE* before = max_head();
-
+			UNODE* before = head[th_id];
 			UNODE* help = announce[((before->seq + 1) % MAX_THREADS)];
 			if (help->seq == 0) prefer = help;
 			else prefer = announce[th_id];
@@ -1411,7 +1414,6 @@ public:
 		lfu_set.print20();
 	}
 };
-
 
 WFU_SET clist;
 
@@ -1531,7 +1533,7 @@ int main()
 	// 알고리즘 정확성 검사
 	std::cout << "Checking for consistency.\n\n";
 	{
-		for (int i = 1; i <= MAX_THREADS; i = i * 2) {
+		for (int i = MAX_THREADS; i >= 1; i = i / 2) {
 			num_threads = i;
 			std::vector <std::thread> threads;
 			clist.clear();
