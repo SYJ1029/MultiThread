@@ -1415,7 +1415,7 @@ public:
 	}
 };
 
-WFU_SET clist;
+LFU_SET clist;
 
 const int NUM_TEST = 10000;
 const int KEY_RANGE = 1000;
