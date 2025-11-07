@@ -4,6 +4,7 @@
 #include <chrono>
 #include <mutex>
 #include <atomic>
+#include <set>
 
 const int MAX_THREADS = 16;
 
@@ -62,10 +63,56 @@ public:
 	}
 };
 
+class LF_STACK {
+
+
+private:
+	NODE* top;
+public:
+
+	void clear()
+	{
+		while (Pop() != -2) {}
+	}
+
+	bool CAS()
+	{
+
+	}
+
+	void Push(int x)
+	{
+		NODE* e = new NODE{ x };
+
+		e->next = top;
+		std::atomic_compare_exchange_strong(reinterpret_cast<std::atomic<NODE*>*>(top), &e->next, e);
+		top = e;
+	}
+
+	int Pop()
+	{
+		if (nullptr == top) return -2;
+		int temp = top->value;
+		NODE* ptr = top;
+		std::atomic_compare_exchange_strong(reinterpret_cast<std::atomic<NODE*>*>(top), &ptr, top->next);
+		top = top->next;
+		return temp;
+	}
+
+	void print20()
+	{
+		NODE* curr = top->next;
+		for (int i = 0; i < 20 && curr != nullptr; i++, curr = curr->next)
+			std::cout << curr->value << ", ";
+		std::cout << "\n";
+	}
+
+};
 
 C_STACK my_stack;
 
 const int NUM_TEST = 10000000;
+
 
 void benchmark(const int num_thread)
 {
