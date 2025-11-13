@@ -27,5 +27,11 @@
     <ClCompile Include="STACK.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="64ST_queue.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ebr_lf_queue.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

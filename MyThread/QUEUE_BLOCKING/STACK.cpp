@@ -5,8 +5,10 @@
 #include <mutex>
 #include <set>
 #include <unordered_set>
+#include <immintrin.h>
 
 const int MAX_THREADS = 16;
+int num_threads = 0;
 
 class NODE {
 public:
@@ -23,7 +25,7 @@ public:
 
 class C_STACK {
 	NODE* top;
-	std::mutex set_lock;
+	DUMMY_MUTEX set_lock;
 public:
 	C_STACK() {
 		top = nullptr;
@@ -95,30 +97,29 @@ public:
 
 	void push(int x)
 	{
-		auto new_node = new NODE(x);
+		NODE* new_node = new NODE(x);
 		while (true) {
-			auto curr = top;
-			new_node->next = curr;
-			if (true == CAS(&top, curr, new_node))
-			{
-				break;
-			}
+			auto last = top;
+			new_node->next = last;
+			if (true == CAS(&top, last, new_node))
+				return;
 		}
 	}
 
 	int pop()
 	{
-
 		while (true) {
-			auto curr = top;
-			if (nullptr == curr) {
+			auto last = top;
+			if (nullptr == last) {
 				return -2;
 			}
-			auto next = curr->next;
-			int res = curr->value;
-
-			if(true == CAS(&top, curr, next))
-				return res;
+			auto next = last->next;
+			if (last != top) continue;
+			int v = last->value;
+			if (true == CAS(&top, last, next)) {
+				// delete last;
+				return v;
+			}
 		}
 	}
 
@@ -131,45 +132,33 @@ public:
 	}
 };
 
-
-
-
-thread_local int thread_id;
-
-class BackOff {
-	int minDelay, maxDelay;
+class BACKOFF{
+	int min_delay;
+	int max_delay;
 	int limit;
 public:
-	BackOff(int min, int max)
-		: minDelay(min), maxDelay(max), limit(min) {
-
-		if (0 == limit)
-		{
-			std::cout << "BackOff min_delay cannot be zero\n";
+	BACKOFF(int min_d, int max_d)
+		: min_delay(min_d), max_delay(max_d), limit(min_d) {
+		if (0 == limit) {
+			std::cout << "Backoff min_delay cannot be zero.\n";
 			exit(-1);
 		}
+
 	}
 	void backoff() {
-		int delay = 0;
-		if (limit != 0) delay = rand() % limit;
-		limit *= 2;
-		if (limit > maxDelay) limit = maxDelay;
-		std::this_thread::sleep_for(std::chrono::microseconds(delay));;
+		auto delay = rand() % limit;
+		limit += limit;
+		if (limit > max_delay) limit = max_delay;
+		//std::this_thread::sleep_for(std::chrono::microseconds(delay));
+		for (int i = 0; i < delay; i++) _mm_pause();
 	}
 };
 
-class LFBO_STACK
-{
+class LFBO_STACK {
 	NODE* volatile top;
-	std::vector<BackOff> delays;
 public:
 	LFBO_STACK() {
 		top = nullptr;
-		delays.reserve(MAX_THREADS);
-		for (int i = 0; i < MAX_THREADS; ++i)
-		{
-			delays.emplace_back(10, 1000);
-		}
 	}
 
 	~LFBO_STACK() {
@@ -190,37 +179,33 @@ public:
 
 	void push(int x)
 	{
-		BackOff bo(10, 1000);
-		auto new_node = new NODE(x);
+		BACKOFF bo(1, num_threads);
+		NODE* new_node = new NODE(x);
 		while (true) {
-			auto curr = top;
-			new_node->next = curr;
-			if (true == CAS(&top, curr, new_node))
-			{
+			auto last = top;
+			new_node->next = last;
+			if (true == CAS(&top, last, new_node))
 				return;
-			}
 			bo.backoff();
-
-
 		}
 	}
 
 	int pop()
 	{
-		BackOff bo(10, 1000);
+		BACKOFF bo(1, num_threads);
 		while (true) {
-			auto curr = top;
-			if (nullptr == curr) {
+			auto last = top;
+			if (nullptr == last) {
 				return -2;
 			}
-			auto next = curr->next;
-			int res = curr->value;
-
-			if (true == CAS(&top, curr, next))
-				return res;
-		
+			auto next = last->next;
+			if (last != top) continue;
+			int v = last->value;
+			if (true == CAS(&top, last, next)) {
+				// delete last;
+				return v;
+			}
 			bo.backoff();
-			
 		}
 	}
 
@@ -233,19 +218,13 @@ public:
 	}
 };
 
-
-
-
-
-
-
 LFBO_STACK my_stack;
-
 
 struct HISTORY {
 	std::vector <int> push_values, pop_values;
 };
 std::atomic_int stack_size;
+thread_local int thread_id;
 const int NUM_TEST = 10000000;
 
 void benchmark(const int num_thread)
@@ -295,8 +274,7 @@ void check_history(std::vector <HISTORY>& h)
 		for (auto num : v.pop_values) poped.insert(num);
 		while (true) {
 			int num = my_stack.pop();
-			if (num == -2) 
-				break;
+			if (num == -2) break;
 			poped.insert(num);
 		}
 	}
@@ -330,7 +308,8 @@ int main()
 {
 	using namespace std::chrono;
 
-	for (int n = 1; n <= MAX_THREADS; n = n * 2) {
+	/*for (int n = 1; n <= MAX_THREADS; n = n * 2) {
+		num_threads = n;
 		my_stack.clear();
 		std::vector<std::thread> tv;
 		std::vector<HISTORY> history;
@@ -348,9 +327,10 @@ int main()
 		std::cout << n << " Threads,  " << ms << "ms. ----";
 		my_stack.print20();
 		check_history(history);
-	}
+	}*/
 
 	for (int n = 1; n <= MAX_THREADS; n *= 2) {
+		num_threads = n;
 		my_stack.clear();
 		std::vector<std::thread> tv;
 		auto start_t = high_resolution_clock::now();
