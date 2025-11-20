@@ -25,7 +25,7 @@ public:
 
 class C_STACK {
 	NODE* top;
-	DUMMY_MUTEX set_lock;
+	std::mutex set_lock;
 public:
 	C_STACK() {
 		top = nullptr;
@@ -225,8 +225,11 @@ constexpr int EX_BUSY = 2;
 class LockFreeExchanger {
 	alignas(64) std::atomic_llong slot;
 public:
+	volatile int count;
+
 	LockFreeExchanger() {
 		slot = 0;
+		count = 0;
 	}
 	int exchange(int value, bool* busy) {
 		*busy = false;
@@ -245,6 +248,7 @@ public:
 						if (state == EX_BUSY) {
 							int ret_value = (int)(curr_slot & 0xFFFFFFFF);
 							slot = 0;
+							count++;
 							return ret_value;
 						}
 						auto curr_t = std::chrono::high_resolution_clock::now();
@@ -260,6 +264,7 @@ public:
 								curr_slot = slot;
 								int ret_value = (int)(curr_slot & 0xFFFFFFFF);
 								slot = 0;
+								count++;
 								return ret_value;
 							}
 						}
@@ -270,6 +275,7 @@ public:
 			case EX_WAITING: {
 				long long new_slot = ((long long)value) | ((long long)EX_BUSY << 32);
 				if (std::atomic_compare_exchange_strong(&slot, &curr_slot, new_slot)) {
+					count++;
 					return value;
 				}
 				else
@@ -287,10 +293,20 @@ public:
 
 class EliminationArray {
 	int range;
+	int sum;
 	LockFreeExchanger exchanger[MAX_THREADS / 2 - 1];
 public:
-	EliminationArray() { range = 1; }
+	EliminationArray() { range = 1; sum = 0; }
 	~EliminationArray() {}
+
+	void SumClear()
+	{
+		sum = 0;
+		for (int i = 0; i < MAX_THREADS / 2 - 1; ++i)
+		{
+			exchanger[i].count = 0;
+		}
+	}
 	int Visit(int value) {
 		int slot = rand() % range;
 		bool busy;
@@ -301,6 +317,16 @@ public:
 		if ((true == busy) && (old_range <= num_threads / 2 - 1))
 			range, old_range + 1; // MAX RANGE is # of thread / 2
 		return ret;
+	}
+
+	int GetSum()
+	{
+		for (int i = 0; i < MAX_THREADS / 2 - 1; ++i)
+		{
+			sum += exchanger[i].count;
+		}
+
+		return sum;
 	}
 };
 
@@ -319,6 +345,7 @@ public:
 
 	void clear() {
 		while (nullptr != top) pop();
+		el_array.SumClear();
 	}
 
 	bool CAS(NODE* volatile* addr, NODE* expected, NODE* new_value)
@@ -367,10 +394,15 @@ public:
 		for (int i = 0; i < 20 && curr != nullptr; i++, curr = curr->next)
 			std::cout << curr->value << ", ";
 		std::cout << "\n";
+		std::cout << "Exchange Successes: " << el_array.GetSum() << std::endl;
+
+		el_array.SumClear();
 	}
+
+
 };
 
-LFBO_STACK my_stack;
+LFEL_STACK my_stack;
 
 struct HISTORY {
 	std::vector <int> push_values, pop_values;
