@@ -356,32 +356,32 @@ public:
 	}
 };
 
-class LF_NODE;
+class LFSKNODE;
 
-class MR {
+class SKMR {
 	volatile long long ptr_and_mark;
 public:
-	MR(LF_NODE* p)
+	SKMR(LFSKNODE* p)
 	{
 		ptr_and_mark = reinterpret_cast<long long>(p);
 	}
-	MR() : ptr_and_mark(0) {}
-	LF_NODE* get_ptr()
+	SKMR() : ptr_and_mark(0) {}
+	LFSKNODE* get_ptr()
 	{
 		long long temp = ptr_and_mark & 0xFFFFFFFFFFFFFFFE;
-		return reinterpret_cast<LF_NODE*>(temp);
+		return reinterpret_cast<LFSKNODE*>(temp);
 	}
 	bool get_mark() { return (ptr_and_mark & 1) == 1; }
-	void set_ptr(LF_NODE* p) {
+	void set_ptr(LFSKNODE* p) {
 		ptr_and_mark = reinterpret_cast<long long>(p);
 	}
-	LF_NODE* get_ptr_and_mark(bool* mark) {
+	LFSKNODE* get_ptr_and_mark(bool* mark) {
 		long long temp = ptr_and_mark;
 		*mark = (temp & 1) == 1;
 		temp = temp & 0xFFFFFFFFFFFFFFFE;
-		return reinterpret_cast<LF_NODE*>(temp);
+		return reinterpret_cast<LFSKNODE*>(temp);
 	}
-	bool CAS(LF_NODE* old_ptr, LF_NODE* new_ptr,
+	bool CAS(LFSKNODE* old_ptr, LFSKNODE* new_ptr,
 		bool old_mark, bool new_mark)
 	{
 		long long o = reinterpret_cast<long long>(old_ptr);
@@ -394,36 +394,33 @@ public:
 	}
 };
 
-class LF_NODE {
+class LFSKNODE {
 public:
 	int value;
-	MR next[MAX_LEVEL + 1];
+	SKMR next[MAX_LEVEL + 1];
 	int top_level;
-	volatile bool removed = false;
-	volatile bool fully_linked = false;
 
-	LF_NODE(int v, int top) : value(v), top_level(top), removed(false), fully_linked(false)
+	LFSKNODE(int v, int top) : value(v), top_level(top)
 	{
-		for (auto& p : next)p = nullptr;
+		for (auto& p : next)p.set_ptr(nullptr);
 	}
-	LF_NODE() : value(-1), top_level(0), removed(false), fully_linked(false) {
-		for (auto& p : next)p = nullptr;
+	LFSKNODE() : value(-1), top_level(0) 
+	{
+		for (auto& p : next)p.set_ptr(nullptr);
 	}
 };
 
 
 class LFN_SKLIST
 {
-	LF_NODE* volatile head, * volatile tail;
+	LFSKNODE* head, * tail;
 public:
 	LFN_SKLIST() {
 		/* 값을 0부터 1000까지로 제한하겠음 */
-		head = new LF_NODE(-1, MAX_LEVEL);
-		tail = new LF_NODE(1000000001, MAX_LEVEL);
+		head = new LFSKNODE(-1, MAX_LEVEL);
+		tail = new LFSKNODE(1000000001, MAX_LEVEL);
 		for (auto& p : head->next) p = tail;
 
-		head->fully_linked = true;
-		tail->fully_linked = true;
 
 	}
 
@@ -433,26 +430,143 @@ public:
 		delete tail;
 	}
 	void clear() {
+		LFSKNODE* curr = head->next[0].get_ptr();
+		while (curr != tail) {
+			LFSKNODE* next = curr->next[0].get_ptr();
+			delete curr;
+			curr = next;
+		}
+		for (auto& p : head->next) p = tail;
 	}
+
+	int find(LFSKNODE* preds[], LFSKNODE* currs[], int x)
+	{
+		int found_level = -1;
+		while (true) {
+		retry:
+			preds[MAX_LEVEL] = head;
+			for (int level = MAX_LEVEL; level >= 0; level--) {
+				if (MAX_LEVEL != level)
+					preds[level] = preds[level + 1];
+				currs[level] = preds[level]->next[level].get_ptr();
+
+				while (true) {
+					bool removed = false;
+					LFSKNODE* succ = currs[level]->next[level].get_ptr_and_mark(&removed);
+
+					while (true == removed)
+					{
+						if (false == preds[level]->next[level].CAS(currs[level], succ, false, false)) {
+							goto retry;
+						}
+						currs[level] = succ;
+						succ = currs[level]->next[level].get_ptr_and_mark(&removed);
+					}
+
+					if (currs[level]->value < x) {
+						preds[level] = currs[level];
+						currs[level] = succ;
+					}
+					else break;
+				}
+
+
+			}
+			return currs[0]->value == x;
+		}
+	}
+
 	bool add(int x)
 	{
-		return true;
+		LFSKNODE* preds[MAX_LEVEL + 1];
+		LFSKNODE* currs[MAX_LEVEL + 1];
+
+		while (true)
+		{
+			
+			return true;
+		}
+
+
 	}
+
 	bool remove(int x)
 	{
+		LFSKNODE* preds[MAX_LEVEL + 1];
+		LFSKNODE* currs[MAX_LEVEL + 1];
 
+		while (true) {
+			bool found = find(preds, currs, x);
+			if (!found) return false;
+
+			LFSKNODE* victim = currs[0];
+
+			for(int level = victim->top_level; level >=1; --level)
+			{
+				bool marked = false;
+				LFSKNODE* succ = nullptr;
+				while (false == marked)
+				{
+					victim->next[level].CAS(succ, succ, false, true);
+					succ = victim->next[level].get_ptr_and_mark(&marked);
+				}
+			}
+
+			bool marked = false;
+			LFSKNODE* succ = victim->next[0].get_ptr_and_mark(&marked);
+
+			while (true)
+			{
+				bool i_marked_it = victim->next[0].CAS(succ, succ, false, true);
+				succ = victim->next[0].get_ptr_and_mark(&marked);
+				if (i_marked_it)
+				{
+					find(preds, currs, x);
+					return true;
+				}
+				else if (marked)
+					return false;
+			}
+
+
+			
+		}
 	}
 	bool contains(int x)
 	{
-		return true;
+		LFSKNODE* pred = head;
+		LFSKNODE* curr;
+		for (int i = MAX_LEVEL; i >= 0; --i)
+		{
+			curr = pred->next[i].get_ptr();
+			bool removed = false;
+			LFSKNODE* succ = curr->next[i].get_ptr_and_mark(&removed);
+			while (removed)
+			{
+				curr = succ;
+				succ = curr->next[i].get_ptr_and_mark(&removed);
+
+				if (curr->value < x) {
+					pred = curr;
+					curr = succ;
+				}
+				else break;
+			}
+		}
+
+		return curr->value == x;
 	}
+
 	void print20()
 	{
-		std::cout << "LFN_SKLIST print20 not implemented.\n";
+		LFSKNODE* curr = head->next[0].get_ptr();
+		for (int i = 0; i < 20 && curr != tail; i++, curr = curr->next[0].get_ptr())
+			std::cout << curr->value << ", ";
+		std::cout << "\n";
 	}
 };
 
-Z_SKLIST clist;
+LFN_SKLIST clist;
 
 const int NUM_TEST = 4000000;
 const int KEY_RANGE = 1000;
