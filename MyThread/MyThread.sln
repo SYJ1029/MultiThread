@@ -25,6 +25,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QUEUE_BLOCKING", "QUEUE_BLO
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SKIPLIST", "SKIPLIST\SKIPLIST.vcxproj", "{53F1ADFD-8331-431C-A288-D3261E4699DF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Project1", "..\..\OpenMP\Project1\Project1.vcxproj", "{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -121,6 +123,14 @@ Global
 		{53F1ADFD-8331-431C-A288-D3261E4699DF}.Release|x64.Build.0 = Release|x64
 		{53F1ADFD-8331-431C-A288-D3261E4699DF}.Release|x86.ActiveCfg = Release|Win32
 		{53F1ADFD-8331-431C-A288-D3261E4699DF}.Release|x86.Build.0 = Release|Win32
+		{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}.Debug|x64.ActiveCfg = Debug|x64
+		{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}.Debug|x64.Build.0 = Debug|x64
+		{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}.Debug|x86.ActiveCfg = Debug|Win32
+		{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}.Debug|x86.Build.0 = Debug|Win32
+		{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}.Release|x64.ActiveCfg = Release|x64
+		{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}.Release|x64.Build.0 = Release|x64
+		{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}.Release|x86.ActiveCfg = Release|Win32
+		{0A64DFCE-3938-4F3B-949D-C122ACA46A5A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
